@@ -65,6 +65,7 @@ describe('public album migration contract', () => {
     expect(publicAlbumMigration).toMatch(/register_participant_for_event[\s\S]*v_event\.status = 'archived'[\s\S]*EVENT_ARCHIVED/i);
     expect(publicAlbumMigration).toMatch(/reserve_moment_slot[\s\S]*v_event_status = 'archived'[\s\S]*EVENT_ARCHIVED/i);
     expect(publicAlbumMigration).toMatch(/complete_moment[\s\S]*v_event_status = 'archived'[\s\S]*EVENT_ARCHIVED/i);
+    expect(publicAlbumMigration).toMatch(/select \* into v_event from events where id = v_moment\.event_id for update/i);
   });
 });
 

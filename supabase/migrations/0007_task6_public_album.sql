@@ -138,12 +138,13 @@ begin
 end; $$;
 
 create or replace function complete_moment(p_moment_id uuid, p_metadata jsonb) returns jsonb language plpgsql as $$
-declare v_moment moments%rowtype; v_reservation upload_reservations%rowtype; v_event_status text;
+declare v_moment moments%rowtype; v_reservation upload_reservations%rowtype; v_event events%rowtype; v_event_status text;
 begin
   select * into v_moment from moments where id = p_moment_id for update;
   if not found then raise exception 'MOMENT_NOT_FOUND'; end if;
   if v_moment.status = 'PUBLISHED' then return moment_record_json(v_moment); end if;
-  select status into v_event_status from events where id = v_moment.event_id;
+  select * into v_event from events where id = v_moment.event_id for update;
+  v_event_status := v_event.status;
   if v_event_status = 'archived' then raise exception 'EVENT_ARCHIVED' using errcode = 'P0001'; end if;
   if v_moment.status <> 'RESERVED' or v_moment.deleted_at is not null then raise exception 'RESERVATION_NOT_ACTIVE' using errcode = 'P0001'; end if;
   select * into v_reservation from upload_reservations where moment_id = p_moment_id for update;

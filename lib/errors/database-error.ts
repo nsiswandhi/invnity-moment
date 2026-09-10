@@ -14,6 +14,7 @@ const expectedDatabaseErrors: Record<string, () => HttpError> = {
   MOMENT_NOT_AVAILABLE: () => new HttpError(404, 'MOMENT_NOT_AVAILABLE', 'Momen tidak tersedia.'),
   INVALID_MOMENT_CATEGORY: () => new HttpError(400, 'INVALID_MOMENT_CATEGORY', 'Kategori momen tidak valid.'),
   INVALID_LIKE_IDENTITY: () => new HttpError(400, 'INVALID_LIKE_IDENTITY', 'Identitas like tidak valid.'),
+  INVALID_CURSOR: () => new HttpError(400, 'INVALID_CURSOR', 'Halaman album tidak valid. Muat ulang album untuk mencoba lagi.'),
 };
 
 export function toExpectedDatabaseHttpError(error: unknown): HttpError | null {
