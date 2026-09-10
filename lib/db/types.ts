@@ -49,4 +49,5 @@ export type PublicMoment = {
   publishedAt: string;
   thumbnailUrl: string;
   displayUrl: string;
+  liked?: boolean;
 };

@@ -6,15 +6,17 @@ import { useState } from 'react';
 import type { PublicMoment } from '../../lib/db/types';
 import { categoryCopy } from '../moments/CategoryCards';
 
+const csrfToken = () => typeof document === 'undefined' ? '' : decodeURIComponent(document.cookie.split(';').map((item) => item.trim()).find((item) => item.startsWith('invnity_csrf='))?.split('=').slice(1).join('=') || '');
+
 export function MomentCard({ moment }: { moment: PublicMoment }) {
   const [likeCount, setLikeCount] = useState(moment.likeCount);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(moment.liked ?? false);
   const [busy, setBusy] = useState(false);
   const toggle = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      const response = await fetch(`/api/v1/moments/${moment.id}/like`, { method: liked ? 'DELETE' : 'POST' });
+      const response = await fetch(`/api/v1/moments/${moment.id}/like`, { method: liked ? 'DELETE' : 'POST', headers: { 'x-csrf-token': csrfToken() } });
       const payload = await response.json() as { data?: { liked: boolean; likeCount: number } };
       if (!response.ok || !payload.data) throw new Error('like failed');
       setLiked(payload.data.liked); setLikeCount(payload.data.likeCount);

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../../lib/errors/http-error';
 
-const { assertTrustedMutation, clientRateLimitKey, enforceRateLimit, getPublishedMoment, listPublishedMoments, toggleLike } = vi.hoisted(() => ({
+const { assertTrustedMutation, clientRateLimitKey, enforceRateLimit, getPublicEventState, getPublishedMoment, listPublishedMoments, toggleLike } = vi.hoisted(() => ({
   assertTrustedMutation: vi.fn(),
   clientRateLimitKey: vi.fn().mockReturnValue('anonymous-client'),
   enforceRateLimit: vi.fn(),
+  getPublicEventState: vi.fn(),
   getPublishedMoment: vi.fn(),
   listPublishedMoments: vi.fn(),
   toggleLike: vi.fn(),
@@ -12,7 +13,7 @@ const { assertTrustedMutation, clientRateLimitKey, enforceRateLimit, getPublishe
 
 vi.mock('../../lib/auth/csrf', () => ({ assertTrustedMutation }));
 vi.mock('../../lib/auth/rate-limits', () => ({ clientRateLimitKey, enforceRateLimit }));
-vi.mock('../../lib/db/repositories/public-album', () => ({ getPublishedMoment, listPublishedMoments, toggleLike }));
+vi.mock('../../lib/db/repositories/public-album', () => ({ getPublicEventState, getPublishedMoment, listPublishedMoments, toggleLike }));
 
 import { GET as list } from '../../app/api/v1/moments/route';
 import { GET as detail } from '../../app/api/v1/moments/[momentId]/route';
@@ -28,7 +29,8 @@ describe('public album routes', () => {
     vi.stubEnv('NEXT_PUBLIC_EVENT_ID', eventId);
     vi.stubEnv('NEXT_PUBLIC_EVENT_SLUG', 'reuni-akbar-ia5-2026');
     enforceRateLimit.mockResolvedValue(undefined);
-    listPublishedMoments.mockResolvedValue({ data: [moment], nextCursor: 'next' });
+    getPublicEventState.mockResolvedValue({ eventId, name: 'Reuni Akbar IA 5 Bandung', eventDate: '2026-10-10', status: 'live' });
+    listPublishedMoments.mockResolvedValue({ data: [{ ...moment, liked: true }], nextCursor: 'next' });
     getPublishedMoment.mockResolvedValue(moment);
     toggleLike.mockResolvedValue({ liked: true, likeCount: 3 });
   });
@@ -36,8 +38,8 @@ describe('public album routes', () => {
   it('uses the public event, default limit, cursor, and category filter', async () => {
     const response = await list(new Request(`https://moments.example.test/api/v1/moments?category=REUNI&cursor=cursor-1&limit=30`));
     expect(response.status).toBe(200);
-    expect(listPublishedMoments).toHaveBeenCalledWith({ eventId, category: 'REUNI', cursor: 'cursor-1', limit: 30 });
-    expect(await response.json()).toMatchObject({ data: { data: [moment], nextCursor: 'next' }, request_id: expect.any(String) });
+    expect(listPublishedMoments).toHaveBeenCalledWith({ eventId, category: 'REUNI', cursor: 'cursor-1', limit: 30, anonymousUserKey: null });
+    expect(await response.json()).toMatchObject({ data: { data: [{ ...moment, liked: true }], nextCursor: 'next' }, event: { status: 'live' }, request_id: expect.any(String) });
   });
 
   it('rejects invalid categories before touching the repository', async () => {
@@ -49,7 +51,7 @@ describe('public album routes', () => {
   it('returns only the published public detail projection', async () => {
     const response = await detail(new Request(`https://moments.example.test/api/v1/moments/${momentId}`), { params: Promise.resolve({ momentId }) });
     expect(response.status).toBe(200);
-    expect(getPublishedMoment).toHaveBeenCalledWith(momentId);
+    expect(getPublishedMoment).toHaveBeenCalledWith({ eventId, momentId, anonymousUserKey: null });
     expect(await response.json()).toMatchObject({ data: { moment }, request_id: expect.any(String) });
   });
 
@@ -57,7 +59,7 @@ describe('public album routes', () => {
     const response = await like(new Request(`https://moments.example.test/api/v1/moments/${momentId}/like`, { method: 'POST', headers: { origin: 'https://moments.example.test' } }), { params: Promise.resolve({ momentId }) });
     expect(response.status).toBe(200);
     expect(response.headers.get('set-cookie')).toContain('invnity_like_key=');
-    expect(toggleLike).toHaveBeenCalledWith({ momentId, anonymousUserKey: expect.stringMatching(/^[A-Za-z0-9_-]{40,}$/), liked: true });
+    expect(toggleLike).toHaveBeenCalledWith({ eventId, momentId, anonymousUserKey: expect.stringMatching(/^[A-Za-z0-9_-]{40,}$/), liked: true });
     expect(enforceRateLimit).toHaveBeenCalledWith('moment-like', 'anonymous-client', 60, 60_000);
   });
 
@@ -71,6 +73,12 @@ describe('public album routes', () => {
   it('removes the current anonymous like through the same unique identity', async () => {
     const response = await unlike(new Request(`https://moments.example.test/api/v1/moments/${momentId}/like`, { method: 'DELETE', headers: { cookie: 'invnity_like_key=browser-key-12345678901234567890' } }), { params: Promise.resolve({ momentId }) });
     expect(response.status).toBe(200);
-    expect(toggleLike).toHaveBeenCalledWith({ momentId, anonymousUserKey: 'browser-key-12345678901234567890', liked: false });
+    expect(toggleLike).toHaveBeenCalledWith({ eventId, momentId, anonymousUserKey: 'browser-key-12345678901234567890', liked: false });
+  });
+
+  it('rejects non-UUID public IDs before querying another event', async () => {
+    const response = await detail(new Request('https://moments.example.test/api/v1/moments/not-a-uuid'), { params: Promise.resolve({ momentId: 'not-a-uuid' }) });
+    expect(response.status).toBe(400);
+    expect(getPublishedMoment).not.toHaveBeenCalled();
   });
 });

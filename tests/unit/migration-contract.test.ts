@@ -50,17 +50,21 @@ describe('public album migration contract', () => {
     expect(publicAlbumMigration).toMatch(/least\(greatest\(coalesce\(p_limit,\s*30\),\s*1\),\s*50\)/i);
     expect(publicAlbumMigration).toMatch(/status = 'PUBLISHED' and m\.deleted_at is null/i);
     expect(publicAlbumMigration).toMatch(/order by m\.published_at desc, m\.id desc/i);
+    expect(publicAlbumMigration).toMatch(/p_anonymous_user_key_hash text/i);
+    expect(publicAlbumMigration).toMatch(/jsonb_build_object\('publishedAt'/i);
   });
 
   it('enforces active anonymous like uniqueness and validates categories', () => {
     expect(publicAlbumMigration).toMatch(/create or replace function set_public_moment_like/i);
     expect(publicAlbumMigration).toMatch(/on conflict \(moment_id, anonymous_user_key_hash\) where revoked_at is null do nothing/i);
     expect(publicAlbumMigration).toMatch(/p_category is not null and p_category not in/i);
+    expect(publicAlbumMigration).toMatch(/p_event_id uuid/i);
   });
 
   it('blocks registration and reservations after the event is archived', () => {
     expect(publicAlbumMigration).toMatch(/register_participant_for_event[\s\S]*v_event\.status = 'archived'[\s\S]*EVENT_ARCHIVED/i);
     expect(publicAlbumMigration).toMatch(/reserve_moment_slot[\s\S]*v_event_status = 'archived'[\s\S]*EVENT_ARCHIVED/i);
+    expect(publicAlbumMigration).toMatch(/complete_moment[\s\S]*v_event_status = 'archived'[\s\S]*EVENT_ARCHIVED/i);
   });
 });
 

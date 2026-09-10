@@ -14,6 +14,7 @@ const row: PublicMomentRow = {
   r2DisplayKey: `events/${eventId}/participants/${participantId}/moments/${momentId}/display.jpg`,
   r2ThumbnailKey: `events/${eventId}/participants/${participantId}/moments/${momentId}/thumbnail.jpg`,
   r2OriginalKey: `events/${eventId}/participants/${participantId}/moments/${momentId}/original`,
+  liked: true,
 };
 
 describe('public album repository', () => {
@@ -22,18 +23,27 @@ describe('public album repository', () => {
     const presignGet = vi.fn(async (key: string) => `https://cdn.example.test/${key}`);
     const database = createSupabasePublicAlbumDatabase({ rpc } as DatabaseClient, { presignGet });
 
-    await expect(database.listPublishedMoments({ eventId, category: null, cursor: null, limit: 30 })).resolves.toEqual({
-      data: [{ id: momentId, category: 'REUNI', likeCount: 4, createdAt: row.createdAt, publishedAt: row.publishedAt, thumbnailUrl: expect.stringContaining('thumbnail.jpg'), displayUrl: expect.stringContaining('display.jpg') }],
+    await expect(database.listPublishedMoments({ eventId, category: null, cursor: null, limit: 30, anonymousUserKey: 'browser-key-12345678901234567890' })).resolves.toEqual({
+      data: [{ id: momentId, category: 'REUNI', likeCount: 4, liked: true, createdAt: row.createdAt, publishedAt: row.publishedAt, thumbnailUrl: expect.stringContaining('thumbnail.jpg'), displayUrl: expect.stringContaining('display.jpg') }],
       nextCursor: 'opaque-next',
     });
-    expect(rpc).toHaveBeenCalledWith('list_published_moments', { p_event_id: eventId, p_category: null, p_cursor: null, p_limit: 30 });
+    expect(rpc).toHaveBeenCalledWith('list_published_moments', expect.objectContaining({ p_event_id: eventId, p_category: null, p_cursor: null, p_limit: 30, p_anonymous_user_key_hash: expect.stringMatching(/^[a-f0-9]{64}$/) }));
   });
 
   it('uses an atomic database operation for active anonymous likes', async () => {
     const rpc = vi.fn().mockResolvedValue({ liked: true, likeCount: 5 });
     const database = createSupabasePublicAlbumDatabase({ rpc } as DatabaseClient, { presignGet: vi.fn() });
 
-    await expect(database.toggleLike({ momentId, anonymousUserKey: 'opaque-browser-key', liked: true })).resolves.toEqual({ liked: true, likeCount: 5 });
-    expect(rpc).toHaveBeenCalledWith('set_public_moment_like', expect.objectContaining({ p_moment_id: momentId, p_liked: true, p_anonymous_user_key_hash: expect.stringMatching(/^[a-f0-9]{64}$/) }));
+    await expect(database.toggleLike({ eventId, momentId, anonymousUserKey: 'opaque-browser-key', liked: true })).resolves.toEqual({ liked: true, likeCount: 5 });
+    expect(rpc).toHaveBeenCalledWith('set_public_moment_like', expect.objectContaining({ p_event_id: eventId, p_moment_id: momentId, p_liked: true, p_anonymous_user_key_hash: expect.stringMatching(/^[a-f0-9]{64}$/) }));
+  });
+
+  it('scopes public detail and signed download lookups to the configured event', async () => {
+    const rpc = vi.fn().mockResolvedValue(row);
+    const database = createSupabasePublicAlbumDatabase({ rpc } as DatabaseClient, { presignGet: vi.fn(async (key: string) => key) });
+    await database.getPublishedMoment({ eventId, momentId, anonymousUserKey: 'opaque-browser-key' });
+    await database.authorizeDownload({ eventId, momentId, variant: 'display' });
+    expect(rpc).toHaveBeenNthCalledWith(1, 'get_published_moment', expect.objectContaining({ p_event_id: eventId, p_moment_id: momentId }));
+    expect(rpc).toHaveBeenNthCalledWith(2, 'get_published_moment', { p_event_id: eventId, p_moment_id: momentId, p_anonymous_user_key_hash: null });
   });
 });
