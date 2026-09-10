@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { trackClientEvent } from '../../../lib/analytics/client-events';
-import { getPublicEventConfig } from '../../../lib/event-config';
+import { getPublicEventSlug } from '../../../lib/event-config';
 
-const eventSlug = (() => { try { return getPublicEventConfig().eventSlug; } catch { return ''; } })();
+const eventSlug = (() => { try { return getPublicEventSlug(); } catch { return ''; } })();
 
 export default function RegisterPage() {
   const router = useRouter();
