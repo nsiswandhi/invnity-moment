@@ -1,6 +1,6 @@
 import { HttpError } from './http-error';
 
-type DatabaseErrorShape = { code?: unknown; message?: unknown };
+type DatabaseErrorShape = { code?: unknown; message?: unknown; detail?: unknown; details?: unknown; hint?: unknown };
 
 const expectedDatabaseErrors: Record<string, () => HttpError> = {
   PARTICIPANT_EXISTS: () => new HttpError(409, 'RECOVERY_REQUIRED', 'Identitas ini tidak dapat digunakan untuk membuat sesi baru. Gunakan pemulihan akses.'),
@@ -20,7 +20,14 @@ const expectedDatabaseErrors: Record<string, () => HttpError> = {
 export function toExpectedDatabaseHttpError(error: unknown): HttpError | null {
   if (error instanceof HttpError) return error;
   if (!error || typeof error !== 'object') return null;
-  const { code, message } = error as DatabaseErrorShape;
+  const { code, message, detail, details, hint } = error as DatabaseErrorShape;
+  const cursorErrorText = [message, detail, details, hint]
+    .filter((value): value is string => typeof value === 'string')
+    .join(' ')
+    .toUpperCase();
+  if (cursorErrorText.includes('INVALID_CURSOR')) {
+    return expectedDatabaseErrors.INVALID_CURSOR();
+  }
   const identifier = typeof code === 'string' ? code : typeof message === 'string' ? message : '';
   return expectedDatabaseErrors[identifier]?.() ?? null;
 }
