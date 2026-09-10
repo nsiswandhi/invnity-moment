@@ -10,6 +10,10 @@ const expectedDatabaseErrors: Record<string, () => HttpError> = {
   '23505': () => new HttpError(409, 'CONFLICT', 'Permintaan bertentangan dengan data yang sudah ada.'),
   '23503': () => new HttpError(409, 'CONFLICT', 'Permintaan merujuk data yang tidak tersedia.'),
   '42501': () => new HttpError(403, 'DATABASE_FORBIDDEN', 'Permintaan tidak diizinkan.'),
+  EVENT_ARCHIVED: () => new HttpError(409, 'EVENT_ARCHIVED', 'Acara sudah diarsipkan. Pendaftaran dan unggahan baru sudah ditutup.'),
+  MOMENT_NOT_AVAILABLE: () => new HttpError(404, 'MOMENT_NOT_AVAILABLE', 'Momen tidak tersedia.'),
+  INVALID_MOMENT_CATEGORY: () => new HttpError(400, 'INVALID_MOMENT_CATEGORY', 'Kategori momen tidak valid.'),
+  INVALID_LIKE_IDENTITY: () => new HttpError(400, 'INVALID_LIKE_IDENTITY', 'Identitas like tidak valid.'),
 };
 
 export function toExpectedDatabaseHttpError(error: unknown): HttpError | null {

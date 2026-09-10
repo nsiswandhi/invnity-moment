@@ -40,3 +40,13 @@ export type MomentRecord = MomentObjectMetadata & {
 };
 
 export type CursorPage<T> = { data: T[]; nextCursor: string | null };
+
+export type PublicMoment = {
+  id: string;
+  category: MomentCategory;
+  likeCount: number;
+  createdAt: string;
+  publishedAt: string;
+  thumbnailUrl: string;
+  displayUrl: string;
+};

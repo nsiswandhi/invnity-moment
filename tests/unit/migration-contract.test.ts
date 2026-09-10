@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 const migration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0001_initial_schema.sql'), 'utf8');
 const participantAuthMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0003_participant_auth.sql'), 'utf8');
 const recoveryOutboxMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0004_recovery_outbox_hardening.sql'), 'utf8');
+const publicAlbumMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0007_task6_public_album.sql'), 'utf8');
 let task4FixMigration = '';
 try { task4FixMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0005_task4_review_fixes.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
 
@@ -40,6 +41,26 @@ describe('initial schema reservation contract', () => {
   it('cancels deleted reservations and omits deleted rows from owned lists', () => {
     expect(migration).toMatch(/update upload_reservations set status = 'CANCELLED'[\s\S]*where moment_id = p_moment_id and status = 'RESERVED'/i);
     expect(migration).toMatch(/from moments where participant_id = p_participant_id and deleted_at is null/i);
+  });
+});
+
+describe('public album migration contract', () => {
+  it('orders public pages by published time and ID, bounds the default page, and excludes hidden/deleted rows', () => {
+    expect(publicAlbumMigration).toMatch(/create or replace function list_published_moments/i);
+    expect(publicAlbumMigration).toMatch(/least\(greatest\(coalesce\(p_limit,\s*30\),\s*1\),\s*50\)/i);
+    expect(publicAlbumMigration).toMatch(/status = 'PUBLISHED' and m\.deleted_at is null/i);
+    expect(publicAlbumMigration).toMatch(/order by m\.published_at desc, m\.id desc/i);
+  });
+
+  it('enforces active anonymous like uniqueness and validates categories', () => {
+    expect(publicAlbumMigration).toMatch(/create or replace function set_public_moment_like/i);
+    expect(publicAlbumMigration).toMatch(/on conflict \(moment_id, anonymous_user_key_hash\) where revoked_at is null do nothing/i);
+    expect(publicAlbumMigration).toMatch(/p_category is not null and p_category not in/i);
+  });
+
+  it('blocks registration and reservations after the event is archived', () => {
+    expect(publicAlbumMigration).toMatch(/register_participant_for_event[\s\S]*v_event\.status = 'archived'[\s\S]*EVENT_ARCHIVED/i);
+    expect(publicAlbumMigration).toMatch(/reserve_moment_slot[\s\S]*v_event_status = 'archived'[\s\S]*EVENT_ARCHIVED/i);
   });
 });
 
