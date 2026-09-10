@@ -91,8 +91,14 @@ describe('public album routes', () => {
     expect(getPublishedMoment).not.toHaveBeenCalled();
   });
 
-  it('maps a malformed opaque cursor returned by the database to a client error', async () => {
-    listPublishedMoments.mockRejectedValueOnce(new Error('INVALID_CURSOR'));
+  it.each(['message', 'detail', 'details', 'hint'])('maps a database P0001 cursor error in %s to a client error', async (field) => {
+    listPublishedMoments.mockRejectedValueOnce({
+      code: 'P0001',
+      message: 'Album pagination rejected',
+      details: null,
+      hint: null,
+      [field]: 'INVALID_CURSOR',
+    });
     const response = await list(new Request('https://moments.example.test/api/v1/moments?cursor=eyJpZCI6bnVsbH0'));
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({ error: { code: 'INVALID_CURSOR' } });

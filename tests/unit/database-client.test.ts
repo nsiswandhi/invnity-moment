@@ -61,4 +61,29 @@ describe('raw PostgREST RPC adapter', () => {
     expect(error).toBeInstanceOf(HttpError);
     expect(error).toMatchObject({ status: 503, code: 'DATABASE_UNAVAILABLE' });
   });
+
+  it.each(['message', 'detail', 'details', 'hint'])('maps P0001 cursor errors carried in %s through the RPC adapter', async (field) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
+      code: 'P0001',
+      message: 'Album pagination rejected',
+      details: null,
+      hint: null,
+      [field]: 'INVALID_CURSOR',
+    }, 400)));
+
+    await expect(createDatabaseClient(environment).rpc('list_published_moments', {}))
+      .rejects.toMatchObject({ status: 400, code: 'INVALID_CURSOR' });
+  });
+
+  it.each([
+    { code: 'PGRST999', message: 'INVALID_CURSOR', details: null, hint: null },
+    { code: 'XX000', message: 'Internal failure', details: 'INVALID_CURSOR', hint: null },
+    { code: 'P0001', message: 'UNRELATED_DOMAIN_ERROR', details: null, hint: null },
+    { code: 'P0001', message: 'NOT_INVALID_CURSOR', details: null, hint: null },
+  ])('keeps unrelated database errors opaque: $code / $message', async (body) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(body, 500)));
+
+    await expect(createDatabaseClient(environment).rpc('list_published_moments', {}))
+      .rejects.toMatchObject({ status: 503, code: 'DATABASE_UNAVAILABLE' });
+  });
 });

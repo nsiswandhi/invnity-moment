@@ -5,6 +5,7 @@ import { toExpectedDatabaseHttpError } from '../errors/database-error';
 export type PostgrestError = {
   code?: string;
   message?: string;
+  detail?: string;
   details?: string;
   hint?: string;
 };
@@ -30,6 +31,7 @@ function asPostgrestError(value: unknown): PostgrestError | null {
   return {
     code: stringField('code'),
     message: stringField('message'),
+    detail: stringField('detail'),
     details: stringField('details'),
     hint: stringField('hint'),
   };
