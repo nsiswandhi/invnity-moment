@@ -12,7 +12,7 @@ const publicSlugSchema = z.object({ NEXT_PUBLIC_EVENT_SLUG: publicEventSlugSchem
 export type PublicEventConfig = { eventId: string; eventSlug: string };
 type PublicEventEnvironment = Partial<Record<string, string | undefined>>;
 
-export function getPublicEventSlug(environment: PublicEventEnvironment = process.env): string {
+export function getPublicEventSlug(environment: PublicEventEnvironment = { NEXT_PUBLIC_EVENT_SLUG: process.env.NEXT_PUBLIC_EVENT_SLUG }): string {
   const result = publicSlugSchema.safeParse(environment);
   if (!result.success) throw new Error('NEXT_PUBLIC_EVENT_SLUG must be configured for this event.');
   return result.data.NEXT_PUBLIC_EVENT_SLUG;
