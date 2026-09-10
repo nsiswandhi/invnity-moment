@@ -67,6 +67,15 @@ describe('recovery outbox migration contract', () => {
     expect(recoveryOutboxMigration).toMatch(/p_delivery_payload_ciphertext\s*!~\s*'\^v1/i);
   });
 
+  it('drops the legacy recovery-token signature before replacing its renamed payload parameter', () => {
+    const legacySignature = /drop function if exists create_recovery_token\s*\(\s*text\s*,\s*uuid\s*,\s*text\s*,\s*timestamptz\s*,\s*text\s*\)\s*;/i;
+    const dropMatch = recoveryOutboxMigration.match(legacySignature);
+    const replaceIndex = recoveryOutboxMigration.search(/create or replace function create_recovery_token/i);
+
+    expect(dropMatch).not.toBeNull();
+    expect(dropMatch?.index ?? Number.POSITIVE_INFINITY).toBeLessThan(replaceIndex);
+  });
+
   it('persists a generic no-op delivery record for unknown recovery identities', () => {
     expect(recoveryOutboxMigration).toMatch(/if not found then[\s\S]*insert into recovery_delivery_outbox[\s\S]*'NOOP'[\s\S]*return jsonb_build_object\('queued', false\)/i);
   });

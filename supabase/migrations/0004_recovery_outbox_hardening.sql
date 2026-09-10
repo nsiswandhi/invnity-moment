@@ -17,6 +17,7 @@ alter table recovery_delivery_outbox add constraint recovery_delivery_outbox_pay
 drop index if exists recovery_delivery_outbox_pending_idx;
 create index recovery_delivery_outbox_claim_idx on recovery_delivery_outbox (status, available_at, created_at) where status in ('PENDING', 'PROCESSING');
 
+drop function if exists create_recovery_token(text, uuid, text, timestamptz, text);
 create or replace function create_recovery_token(p_email text, p_event_id uuid, p_token_hash text, p_expires_at timestamptz, p_delivery_payload_ciphertext text)
 returns jsonb language plpgsql as $$
 declare v_participant participants%rowtype; v_token recovery_tokens%rowtype;

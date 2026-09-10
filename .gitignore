@@ -9,3 +9,4 @@ sources/
 AGENTS.md
 task-*-report.md
 *.tsbuildinfo
+supabase/.temp/
