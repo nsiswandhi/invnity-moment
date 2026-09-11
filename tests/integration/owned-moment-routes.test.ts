@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../../lib/errors/http-error';
+import { buildMomentObjectKeys } from '../../lib/media/object-keys';
 
-const { assertTrustedMutation, clientRateLimitKey, deleteOwnedMoment, enforceRateLimit, listOwnedMoments, requireParticipant, updateOwnedMoment } = vi.hoisted(() => ({
+const { assertTrustedMutation, clientRateLimitKey, deleteOwnedMoment, enforceRateLimit, listOwnedMoments, presignGet, requireParticipant, updateOwnedMoment } = vi.hoisted(() => ({
   assertTrustedMutation: vi.fn(),
   clientRateLimitKey: vi.fn().mockReturnValue('participant-client'),
   deleteOwnedMoment: vi.fn(),
   enforceRateLimit: vi.fn(),
   listOwnedMoments: vi.fn(),
+  presignGet: vi.fn(),
   requireParticipant: vi.fn(),
   updateOwnedMoment: vi.fn(),
 }));
@@ -15,19 +17,22 @@ vi.mock('../../lib/auth/csrf', () => ({ assertTrustedMutation }));
 vi.mock('../../lib/auth/rate-limits', () => ({ clientRateLimitKey, enforceRateLimit }));
 vi.mock('../../lib/auth/session', () => ({ requireParticipant }));
 vi.mock('../../lib/db/repositories/moments', () => ({ deleteOwnedMoment, listOwnedMoments, updateOwnedMoment }));
+vi.mock('../../lib/media/r2-client', () => ({ createR2Client: () => ({ presignGet }) }));
 
 import { GET } from '../../app/api/v1/me/moments/route';
 import { DELETE, PATCH } from '../../app/api/v1/me/moments/[momentId]/route';
 
 const momentId = '1ef1d9e5-2d09-4c1e-84dd-9e7c6bb0c219';
 const participant = { id: 'e3a7c9f1-30b0-4f8b-9ad4-5adfc8445e5c', eventId: 'bd928dad-a8c6-40af-a482-30df35ad5e5b', name: 'Sari', batch: 'IA 5', status: 'active' };
-const moment = { id: momentId, participantId: participant.id, eventId: participant.eventId, status: 'PUBLISHED', category: 'REUNI', r2OriginalKey: 'original', r2DisplayKey: 'display', r2ThumbnailKey: 'thumbnail', mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 10, createdAt: '2026-09-10T00:00:00.000Z', publishedAt: '2026-09-10T00:00:00.000Z', deletedAt: null };
+const momentKeys = buildMomentObjectKeys({ eventId: participant.eventId, participantId: participant.id, momentId });
+const moment = { id: momentId, participantId: participant.id, eventId: participant.eventId, status: 'PUBLISHED', category: 'REUNI', r2OriginalKey: momentKeys.original, r2DisplayKey: momentKeys.display, r2ThumbnailKey: momentKeys.thumbnail, mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 10, createdAt: '2026-09-10T00:00:00.000Z', publishedAt: '2026-09-10T00:00:00.000Z', deletedAt: null };
 
 describe('participant-owned moment routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     requireParticipant.mockResolvedValue(participant);
     enforceRateLimit.mockResolvedValue(undefined);
+    presignGet.mockImplementation(async (key: string) => `https://cdn.example.test/${key}`);
     listOwnedMoments.mockResolvedValue({ data: [moment], nextCursor: 'next-cursor' });
     updateOwnedMoment.mockResolvedValue({ ...moment, category: 'FESTIVAL' });
     deleteOwnedMoment.mockResolvedValue(undefined);
@@ -39,6 +44,27 @@ describe('participant-owned moment routes', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ data: { data: [expect.objectContaining({ id: momentId })], nextCursor: 'next-cursor' } });
     expect(listOwnedMoments).toHaveBeenCalledWith(participant.id, 'cursor-1', 2);
+  });
+
+  it('serializes safe derivative URLs without exposing or signing mismatched keys', async () => {
+    const mismatchedMoment = { ...moment, id: '2ef1d9e5-2d09-4c1e-84dd-9e7c6bb0c219', r2DisplayKey: momentKeys.display, r2ThumbnailKey: 'events/not-managed/thumbnail.jpg' };
+    listOwnedMoments.mockResolvedValueOnce({ data: [moment, mismatchedMoment], nextCursor: 'next-cursor' });
+
+    const response = await GET(new Request('https://moments.example.test/api/v1/me/moments'));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.data.nextCursor).toBe('next-cursor');
+    expect(payload.data.data[0]).toMatchObject({ thumbnailUrl: `https://cdn.example.test/${momentKeys.thumbnail}`, displayUrl: `https://cdn.example.test/${momentKeys.display}` });
+    expect(payload.data.data[0]).not.toHaveProperty('r2OriginalKey');
+    expect(payload.data.data[0]).not.toHaveProperty('r2DisplayKey');
+    expect(payload.data.data[0]).not.toHaveProperty('r2ThumbnailKey');
+    expect(payload.data.data[1]).not.toHaveProperty('thumbnailUrl');
+    expect(payload.data.data[1]).not.toHaveProperty('displayUrl');
+    expect(presignGet).toHaveBeenCalledTimes(2);
+    expect(presignGet).toHaveBeenCalledWith(momentKeys.thumbnail, { expiresInSeconds: 300 });
+    expect(presignGet).toHaveBeenCalledWith(momentKeys.display, { expiresInSeconds: 300 });
+    expect(presignGet).not.toHaveBeenCalledWith('events/not-managed/thumbnail.jpg', expect.anything());
   });
 
   it('rejects malformed cursors and limits before touching the repository', async () => {
