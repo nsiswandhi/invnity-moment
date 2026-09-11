@@ -83,9 +83,27 @@ describe('admin operations routes', () => {
 
     expect(hidden.status).toBe(200);
     expect(restored.status).toBe(200);
-    expect(hideMoment).toHaveBeenCalledWith(admin.id, momentId, 'Privasi peserta.');
-    expect(unhideMoment).toHaveBeenCalledWith(admin.id, momentId);
+    expect(hideMoment).toHaveBeenCalledWith(eventId, admin.id, momentId, 'Privasi peserta.');
+    expect(unhideMoment).toHaveBeenCalledWith(eventId, admin.id, momentId);
     expect(assertTrustedMutation).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores a caller-supplied event id when moderating a photo', async () => {
+    const response = await visibility(new Request(`https://moments.example.test/api/v1/admin/moments/${momentId}/visibility?eventId=another-event`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ visibility: 'hidden', reason: 'Privasi peserta.', eventId: 'another-event' }),
+    }), { params: Promise.resolve({ momentId }) });
+    expect(response.status).toBe(200);
+    expect(hideMoment).toHaveBeenCalledWith(eventId, admin.id, momentId, 'Privasi peserta.');
+  });
+
+  it('refuses moderation when the configured event is missing', async () => {
+    vi.stubEnv('NEXT_PUBLIC_EVENT_ID', '');
+    const response = await visibility(new Request(`https://moments.example.test/api/v1/admin/moments/${momentId}/visibility`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ visibility: 'published' }),
+    }), { params: Promise.resolve({ momentId }) });
+    expect(response.ok).toBe(false);
+    expect(unhideMoment).not.toHaveBeenCalled();
   });
 
   it('returns safe health checks and changes the selected event mode', async () => {

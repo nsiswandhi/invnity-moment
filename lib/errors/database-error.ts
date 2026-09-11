@@ -11,6 +11,7 @@ const expectedDatabaseErrors: Record<string, () => HttpError> = {
   '23503': () => new HttpError(409, 'CONFLICT', 'Permintaan merujuk data yang tidak tersedia.'),
   '42501': () => new HttpError(403, 'DATABASE_FORBIDDEN', 'Permintaan tidak diizinkan.'),
   EVENT_ARCHIVED: () => new HttpError(409, 'EVENT_ARCHIVED', 'Acara sudah diarsipkan. Pendaftaran dan unggahan baru sudah ditutup.'),
+  EVENT_WRITE_DISABLED: () => new HttpError(409, 'EVENT_WRITE_DISABLED', 'Perubahan momen sedang ditutup untuk acara ini. Foto yang tersimpan tetap aman.'),
   MOMENT_NOT_AVAILABLE: () => new HttpError(404, 'MOMENT_NOT_AVAILABLE', 'Momen tidak tersedia.'),
   INVALID_MOMENT_CATEGORY: () => new HttpError(400, 'INVALID_MOMENT_CATEGORY', 'Kategori momen tidak valid.'),
   INVALID_LIKE_IDENTITY: () => new HttpError(400, 'INVALID_LIKE_IDENTITY', 'Identitas like tidak valid.'),
@@ -26,6 +27,9 @@ export function toExpectedDatabaseHttpError(error: unknown): HttpError | null {
     .toUpperCase();
   if (code === 'P0001' && /\bINVALID_CURSOR\b/.test(cursorErrorText)) {
     return new HttpError(400, 'INVALID_CURSOR', 'Halaman album tidak valid. Muat ulang album untuk mencoba lagi.');
+  }
+  if (code === 'P0001' && (message === 'EVENT_WRITE_DISABLED' || message === 'MOMENT_NOT_AVAILABLE')) {
+    return expectedDatabaseErrors[message]();
   }
   const identifier = typeof code === 'string' ? code : typeof message === 'string' ? message : '';
   return expectedDatabaseErrors[identifier]?.() ?? null;

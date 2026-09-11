@@ -4,6 +4,12 @@ import { toExpectedDatabaseHttpError } from '../../lib/errors/database-error'
 import { HttpError } from '../../lib/errors/http-error'
 
 describe('database error normalization', () => {
+  it.each([
+    ['EVENT_WRITE_DISABLED', 409],
+    ['MOMENT_NOT_AVAILABLE', 404],
+  ])('maps the PostgreSQL %s domain error for safe operator/participant feedback', (message, status) => {
+    expect(toExpectedDatabaseHttpError({ code: 'P0001', message })).toMatchObject({ status, code: message });
+  })
   it('maps the production PostgREST INVALID_CURSOR shape to a stable 400 error', () => {
     const error = toExpectedDatabaseHttpError({
       code: 'P0001',

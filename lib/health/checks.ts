@@ -42,7 +42,7 @@ export async function getSystemHealth(eventId: string, dependencies: HealthDepen
   const checks = await Promise.all([
     check('application', 'Aplikasi', async () => undefined),
     check('database', 'Database', dependencies.database ?? checkAdminDatabase),
-    check('r2', 'Penyimpanan foto', dependencies.r2 ?? (async () => { await r2().headObject('health-check/probe'); })),
+    check('r2', 'Penyimpanan foto', dependencies.r2 ?? (async () => { try { await r2().headObject('health-check/probe'); } catch (error) { if (!(error instanceof Error) || !error.message.endsWith('_404')) throw error; } })),
     check('upload', 'Otorisasi upload', dependencies.upload ?? (async () => { await r2().presignPut('health-check/probe', { contentType: 'image/jpeg', expiresInSeconds: 60 }); })),
     check('cdn', 'Pengiriman foto', dependencies.cdn ?? (async () => { const response = await fetch(getPublicConfig().appUrl, { method: 'HEAD', cache: 'no-store' }); if (!response.ok) throw new Error('CDN_UNAVAILABLE'); })),
     check('error_rate', 'Tingkat error', errorRateCheck),
