@@ -1,0 +1,7 @@
+'use client';
+import { useState } from 'react';
+type Moment = { id: string; category: string | null; status: string; participantName: string; participantBatch: string; hiddenReason: string | null };
+export function MomentModerationGrid({ moments, onVisibility }: { moments: Moment[]; onVisibility: (moment: Moment, visibility: 'hidden' | 'published', reason?: string) => Promise<void> }) {
+  const [reasons, setReasons] = useState<Record<string, string>>({});
+  return <div className="admin-moment-grid">{moments.map((moment) => <article className="admin-panel" key={moment.id}><div className="admin-moment-placeholder">📷</div><strong>{moment.participantName}</strong><span className="muted-copy">Angkatan {moment.participantBatch} · {moment.category ?? 'Tanpa kategori'}</span>{moment.status === 'PUBLISHED' ? <><label className="admin-label" htmlFor={`reason-${moment.id}`}>Alasan sembunyikan foto {moment.participantName}<textarea id={`reason-${moment.id}`} value={reasons[moment.id] ?? ''} onChange={(event) => setReasons({ ...reasons, [moment.id]: event.target.value })} /></label><button className="danger-button" type="button" onClick={() => void onVisibility(moment, 'hidden', reasons[moment.id])}>Sembunyikan foto {moment.participantName}</button></> : <button className="secondary-button" type="button" onClick={() => void onVisibility(moment, 'published')}>Tampilkan kembali</button>}</article>)}</div>;
+}
