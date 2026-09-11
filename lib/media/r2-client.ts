@@ -36,7 +36,7 @@ function signingKey(secret: string, date: string): Buffer {
   return hmac(hmac(hmac(hmac(`AWS4${secret}`, date), REGION), SERVICE), 'aws4_request');
 }
 
-function presignedUrl(settings: R2Config, method: 'GET' | 'HEAD' | 'PUT' | 'DELETE', key: string, expiresInSeconds: number, download = false): string {
+function presignedUrl(settings: R2Config, method: 'GET' | 'HEAD' | 'PUT' | 'DELETE', key: string, expiresInSeconds: number): string {
   if (!Number.isInteger(expiresInSeconds) || expiresInSeconds < 1 || expiresInSeconds > 900) throw new Error('R2 presign expiry must be between 1 and 900 seconds');
   const now = new Date();
   const dates = amzDate(now);
@@ -46,7 +46,6 @@ function presignedUrl(settings: R2Config, method: 'GET' | 'HEAD' | 'PUT' | 'DELE
     'X-Amz-Algorithm': 'AWS4-HMAC-SHA256', 'X-Amz-Credential': credential, 'X-Amz-Date': dates.long,
     'X-Amz-Expires': String(expiresInSeconds), 'X-Amz-SignedHeaders': 'host',
   };
-  if (download) query['response-content-disposition'] = 'attachment';
   const canonicalQuery = Object.entries(query).sort(([left], [right]) => left.localeCompare(right)).map(([name, value]) => `${encode(name)}=${encode(value)}`).join('&');
   const path = `/${encode(settings.bucketName)}/${key.split('/').map(encode).join('/')}`;
   const canonicalRequest = [method, path, canonicalQuery, `host:${host}\n`, 'host', 'UNSIGNED-PAYLOAD'].join('\n');
@@ -75,7 +74,7 @@ export function createR2Client(environment = process.env): R2Client {
       assertSafeObjectKey(key);
       return presignedUrl(settings, 'PUT', key, input.expiresInSeconds);
     },
-    presignGet: async (key, input) => { assertSafeObjectKey(key); return presignedUrl(settings, 'GET', key, input.expiresInSeconds, input.download); },
+    presignGet: async (key, input) => { assertSafeObjectKey(key); return presignedUrl(settings, 'GET', key, input.expiresInSeconds); },
     async headObject(key) {
       const response = await request(settings, 'HEAD', key);
       return { contentType: response.headers.get('content-type'), contentLength: Number(response.headers.get('content-length')) || null, etag: response.headers.get('etag') };

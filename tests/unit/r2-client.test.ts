@@ -20,4 +20,12 @@ describe('R2-compatible client', () => {
     await expect(client.getObject('events/one/participants/two/moments/three/original')).resolves.toMatchObject({ body: Buffer.from([1, 2, 3]), contentType: 'image/jpeg', contentLength: 3, etag: 'etag-1' });
     expect(fetch).toHaveBeenCalledWith(expect.stringContaining('https://account-id.r2.cloudflarestorage.com/private-moments/events/one/participants/two/moments/three/original?'), { method: 'GET', headers: undefined, body: undefined });
   });
+
+  it('does not add a response content disposition override to presigned GET URLs', async () => {
+    const client = createR2Client(environment);
+
+    const url = await client.presignGet('events/one/participants/two/moments/three/display', { expiresInSeconds: 60, download: true });
+
+    expect(new URL(url).searchParams.has('response-content-disposition')).toBe(false);
+  });
 });
