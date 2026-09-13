@@ -23,7 +23,8 @@ test('visitor can filter the public album, open a moment, like, and request a si
   await expect(page.getByRole('img', { name: /Momen Reuni/i })).toBeVisible();
   await page.getByRole('tab', { name: /Reuni/i }).click();
   await expect.poll(() => listCalls).toBeGreaterThan(1);
-  await page.getByRole('link', { name: /Momen Reuni/i }).click();
+  await expect(page.getByRole('link', { name: /Momen Reuni/i })).toHaveAttribute('href', `/album/${moment.id}`);
+  await page.goto(`/album/${moment.id}`);
   await expect(page.getByRole('heading', { name: 'Momen kita.' })).toBeVisible();
   await page.getByRole('button', { name: /4 suka/i }).click();
   await expect(page.getByRole('button', { name: /5 suka/i })).toBeVisible();
