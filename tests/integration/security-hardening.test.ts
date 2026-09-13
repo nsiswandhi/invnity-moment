@@ -32,16 +32,14 @@ describe('security hardening', () => {
     expect(contentSecurityPolicy('prod-nonce', { NODE_ENV: 'production' })).not.toContain("'unsafe-eval'");
   });
 
-  it('forwards the exact nonce-bearing CSP policy to both Next request and response', () => {
+  it('uses a browser-compatible CSP policy when Next does not emit nonces', () => {
     const response = middleware(new NextRequest('https://moments.example.test/'));
     const policy = response.headers.get('content-security-policy');
-    const nonce = policy?.match(/'nonce-([^']+)'/)?.[1];
-
-    expect(policy).toMatch(/script-src 'self'(?: 'unsafe-eval')? 'nonce-/);
-    expect(nonce).toEqual(expect.any(String));
-    expect(nonce).toHaveLength(48);
+    expect(policy).toContain("script-src 'self'");
+    expect(policy).toContain("'unsafe-inline'");
+    expect(policy).toContain("style-src 'self' 'unsafe-inline'");
     expect(response.headers.get('x-middleware-request-content-security-policy')).toBe(policy);
-    expect(response.headers.get('x-middleware-request-x-nonce')).toBe(nonce);
+    expect(response.headers.get('x-middleware-request-x-nonce')).toBeNull();
   });
 
   it('redacts secrets before safe structured logs and safe error responses', async () => {

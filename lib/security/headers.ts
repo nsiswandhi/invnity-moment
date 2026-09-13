@@ -1,7 +1,7 @@
 import { REQUEST_ID_HEADER } from './request-id';
 
 export function contentSecurityPolicy(nonce?: string, environment: Pick<NodeJS.ProcessEnv, 'NODE_ENV'> = process.env): string {
-  const nonceSource = nonce ? ` 'nonce-${nonce}'` : '';
+  const inlineSource = nonce ? ` 'nonce-${nonce}'` : " 'unsafe-inline'";
   const developmentSource = environment.NODE_ENV === 'production' ? '' : " 'unsafe-eval'";
   return [
     "default-src 'self'",
@@ -9,8 +9,8 @@ export function contentSecurityPolicy(nonce?: string, environment: Pick<NodeJS.P
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
-    `script-src 'self'${developmentSource}${nonceSource}`,
-    `style-src 'self'${nonceSource}`,
+    `script-src 'self'${developmentSource}${inlineSource}`,
+    `style-src 'self'${inlineSource}`,
     "img-src 'self' blob: data: https://*.r2.cloudflarestorage.com",
     "media-src 'self' blob:",
     "connect-src 'self' https://*.supabase.co https://*.r2.cloudflarestorage.com",
