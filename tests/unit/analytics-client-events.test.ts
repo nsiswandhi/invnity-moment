@@ -38,4 +38,18 @@ describe('client analytics events', () => {
 
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
+
+  it('allows a keyed event to retry after its transport fails', async () => {
+    const analytics = await import('../../lib/analytics/client-events');
+    const fetcher = vi.fn()
+      .mockRejectedValueOnce(new Error('network unavailable'))
+      .mockResolvedValueOnce(new Response(null, { status: 202 }));
+    vi.stubGlobal('navigator', { sendBeacon: vi.fn().mockReturnValue(false) });
+    vi.stubGlobal('fetch', fetcher);
+
+    await analytics.trackClientEventOnce('retryable-view', 'gallery_view', { source: 'public' });
+    await analytics.trackClientEventOnce('retryable-view', 'gallery_view', { source: 'public' });
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
 });

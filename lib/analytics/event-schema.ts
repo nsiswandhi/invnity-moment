@@ -40,6 +40,7 @@ const allowedPropertyNames = new Set([
 ]);
 
 const sensitiveValue = /(https?:\/\/|x-amz-|signature|token|secret|password|authorization|cookie|bearer)/i;
+const emailValue = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 
 function isAnalyticsEventName(value: unknown): value is AnalyticsEventName {
   return typeof value === 'string' && (ANALYTICS_EVENT_NAMES as readonly string[]).includes(value);
@@ -48,7 +49,7 @@ function isAnalyticsEventName(value: unknown): value is AnalyticsEventName {
 function isSafeAnalyticsValue(value: unknown): value is AnalyticsPropertyValue {
   if (typeof value === 'boolean') return true;
   if (typeof value === 'number') return Number.isFinite(value) && Math.abs(value) <= 1_000_000;
-  return typeof value === 'string' && value.length > 0 && value.length <= 120 && !sensitiveValue.test(value);
+  return typeof value === 'string' && value.length > 0 && value.length <= 120 && !sensitiveValue.test(value) && !emailValue.test(value);
 }
 
 export function sanitizeAnalyticsProperties(properties: Record<string, unknown> = {}): AnalyticsProperties {

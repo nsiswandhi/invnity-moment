@@ -66,4 +66,17 @@ describe('analytics event schema', () => {
       properties: { destination: 'google_play', source: 'album' },
     });
   });
+
+  it('drops email-shaped values even when their property names are approved', () => {
+    expect(sanitizeAnalyticsProperties({
+      category: 'sari@example.test',
+      destination: 'contact@sponsor.example',
+      facingMode: 'camera@example.com',
+      permission: 'permission@example.com',
+      status: 'status@example.com',
+      reason: 'reason@example.com',
+      source: 'source@example.com',
+      retryCount: 2,
+    })).toEqual({ retryCount: 2 });
+  });
 });

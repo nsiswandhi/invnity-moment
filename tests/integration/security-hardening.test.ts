@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
 import { apiError, requestId } from '../../lib/auth/http';
 import { HttpError } from '../../lib/errors/http-error';
 import { applySecurityHeaders, contentSecurityPolicy } from '../../lib/security/headers';
 import { redactLogFields, safeLog } from '../../lib/security/redaction';
 import { resolveRequestId } from '../../lib/security/request-id';
+import { middleware } from '../../middleware';
 
 describe('security hardening', () => {
   it('uses an Edge-safe generated request id when the inbound value is unsafe', () => {
@@ -23,6 +25,17 @@ describe('security hardening', () => {
     expect(headers.get('cross-origin-resource-policy')).toBe('same-origin');
     expect(headers.get('x-request-id')).toBe('7b7dc98e-77ff-4f00-a63f-d8257e927a5d');
     expect(headers.get('strict-transport-security')).toContain('max-age=');
+  });
+
+  it('forwards the exact nonce-bearing CSP policy to both Next request and response', () => {
+    const response = middleware(new NextRequest('https://moments.example.test/'));
+    const policy = response.headers.get('content-security-policy');
+    const nonce = policy?.match(/'nonce-([^']+)'/)?.[1];
+
+    expect(policy).toContain("script-src 'self' 'nonce-");
+    expect(nonce).toEqual(expect.any(String));
+    expect(response.headers.get('x-middleware-request-content-security-policy')).toBe(policy);
+    expect(response.headers.get('x-middleware-request-x-nonce')).toBe(nonce);
   });
 
   it('redacts secrets before safe structured logs and safe error responses', async () => {

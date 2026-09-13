@@ -88,3 +88,21 @@ npx supabase db push
 | End-to-end suite | blocked: 3 tests fail because `playwright.config.ts` has no `use.baseURL`, so relative `page.goto()` calls are invalid |
 
 Playwright Chromium was installed to remove the missing-browser environment blocker. The remaining E2E failure is an existing test configuration issue and was not changed because it is outside this follow-up scope.
+
+## Remaining review fixes — 2026-09-13
+
+- Corrected Next 15 CSP nonce propagation by forwarding the exact nonce-bearing CSP policy and nonce on the middleware request, alongside the matching response policy.
+- Sanitization now drops email-shaped values even when they use an allowlisted analytics property name.
+- `trackClientEventOnce` now releases its key when the beacon/fetch transport is unavailable or unsuccessful, allowing a later retry.
+- Added regression tests for request/response CSP parity, email-shaped values, and retryable client telemetry.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| TDD focused red phase | 3 expected regressions failed before implementation |
+| TDD focused green phase | 13 passed |
+| Typecheck | passed |
+| Lint | passed |
+| Production build | passed, exit code 0 |
+| `git diff --check` | passed |
