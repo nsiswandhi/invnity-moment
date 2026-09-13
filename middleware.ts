@@ -4,10 +4,12 @@ import { REQUEST_ID_HEADER, resolveRequestId } from './lib/security/request-id';
 
 export function middleware(request: NextRequest) {
   const id = resolveRequestId(request.headers.get(REQUEST_ID_HEADER));
+  const nonce = globalThis.crypto.randomUUID().replaceAll('-', '');
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(REQUEST_ID_HEADER, id);
+  requestHeaders.set('x-nonce', nonce);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
-  applySecurityHeaders(response.headers, id);
+  applySecurityHeaders(response.headers, id, process.env, nonce);
   return response;
 }
 

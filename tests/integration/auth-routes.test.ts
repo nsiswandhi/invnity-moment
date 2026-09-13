@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../../lib/errors/http-error';
 
-const { clientRateLimitKey, consumeRecoveryToken, createDatabaseClient, createParticipantSession, enforceRateLimit, getSessionTokenHash, queueRecoveryRequest, requireParticipant } = vi.hoisted(() => ({
+const { clientRateLimitKey, consumeRecoveryToken, createDatabaseClient, createParticipantSession, enforceRateLimit, getSessionTokenHash, queueRecoveryRequest, requireParticipant, trackServerEvent } = vi.hoisted(() => ({
   clientRateLimitKey: vi.fn().mockReturnValue('opaque-rate-key'),
   consumeRecoveryToken: vi.fn(),
   createDatabaseClient: vi.fn(),
@@ -10,6 +10,7 @@ const { clientRateLimitKey, consumeRecoveryToken, createDatabaseClient, createPa
   getSessionTokenHash: vi.fn(),
   queueRecoveryRequest: vi.fn(),
   requireParticipant: vi.fn(),
+  trackServerEvent: vi.fn(),
 }));
 
 vi.mock('../../lib/auth/session', () => ({
@@ -22,6 +23,7 @@ vi.mock('../../lib/auth/recovery', () => ({ consumeRecoveryToken }));
 vi.mock('../../lib/recovery/recovery-request', () => ({ queueRecoveryRequest }));
 vi.mock('../../lib/auth/rate-limits', () => ({ clientRateLimitKey, enforceRateLimit }));
 vi.mock('../../lib/db/client', () => ({ createDatabaseClient }));
+vi.mock('../../lib/analytics/server-events', () => ({ trackServerEvent }));
 
 import { POST as register } from '../../app/api/v1/events/[event]/participants/route';
 import { POST as requestRecovery } from '../../app/api/v1/access-recovery/route';
@@ -34,6 +36,8 @@ describe('authentication routes', () => {
     vi.clearAllMocks();
     enforceRateLimit.mockResolvedValue(undefined);
     queueRecoveryRequest.mockResolvedValue(undefined);
+    trackServerEvent.mockResolvedValue(undefined);
+    vi.stubEnv('NEXT_PUBLIC_EVENT_ID', 'bd928dad-a8c6-40af-a482-30df35ad5e5b');
   });
 
   it('returns a stable validation error without echoing submitted email', async () => {
@@ -192,6 +196,7 @@ describe('authentication routes', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ data: { participant: { id: 'participant-1' }, expires_at: '2026-10-10T00:00:00.000Z' }, request_id: expect.any(String) });
     expect(createParticipantSession).toHaveBeenCalledWith({ participant });
+    expect(trackServerEvent).toHaveBeenCalledWith({ eventId: participant.eventId, participantId: null, name: 'recovery_completed', properties: {} });
     expect(response.headers.get('set-cookie')).toContain('invnity_session=rotated-session-token');
   });
 

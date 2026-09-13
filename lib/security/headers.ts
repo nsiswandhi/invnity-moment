@@ -1,22 +1,23 @@
 import { REQUEST_ID_HEADER } from './request-id';
 
-export function contentSecurityPolicy(): string {
+export function contentSecurityPolicy(nonce?: string): string {
+  const nonceSource = nonce ? ` 'nonce-${nonce}'` : '';
   return [
     "default-src 'self'",
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
+    `script-src 'self'${nonceSource}`,
+    `style-src 'self'${nonceSource}`,
     "img-src 'self' blob: data: https://*.r2.cloudflarestorage.com",
     "media-src 'self' blob:",
     "connect-src 'self' https://*.supabase.co https://*.r2.cloudflarestorage.com",
   ].join('; ');
 }
 
-export function applySecurityHeaders(headers: Headers, id: string, environment = process.env): void {
-  headers.set('content-security-policy', contentSecurityPolicy());
+export function applySecurityHeaders(headers: Headers, id: string, environment = process.env, nonce?: string): void {
+  headers.set('content-security-policy', contentSecurityPolicy(nonce));
   headers.set('cross-origin-opener-policy', 'same-origin');
   headers.set('cross-origin-resource-policy', 'same-origin');
   headers.set('permissions-policy', 'camera=(self), microphone=(), geolocation=()');

@@ -66,3 +66,25 @@ Apply the new migration after deployment preparation:
 ```powershell
 npx supabase db push
 ```
+
+## Approved follow-up fixes — 2026-09-13
+
+- Instrumented landing, public album, moment detail, successful likes, successful downloads, and recovery completion events using the existing client/server analytics paths. View events use keyed client deduplication; action events are emitted only after successful server operations. No email, token, signed URL, or other unnecessary personal data is added.
+- Hardened `POST /api/v1/analytics` to require exact `application/json` content type and reject bodies over 8 KiB before JSON parsing.
+- Replaced CSP `unsafe-inline` directives with per-request nonce sources. Middleware forwards the nonce to Next.js through `x-nonce` and applies the matching policy to the response.
+- Added regression coverage for telemetry emission, deduplication, request content type/body limits, and nonce-based CSP.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| TDD focused red phase | 7 expected regressions failed before implementation |
+| TDD focused green phase | 37 passed |
+| Full unit/integration suite | 263 passed, 1 skipped |
+| Typecheck | passed |
+| Lint | passed |
+| Production build | passed |
+| `git diff --check` | passed |
+| End-to-end suite | blocked: 3 tests fail because `playwright.config.ts` has no `use.baseURL`, so relative `page.goto()` calls are invalid |
+
+Playwright Chromium was installed to remove the missing-browser environment blocker. The remaining E2E failure is an existing test configuration issue and was not changed because it is outside this follow-up scope.

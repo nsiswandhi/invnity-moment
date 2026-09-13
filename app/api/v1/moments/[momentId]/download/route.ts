@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { trackServerEvent } from '../../../../../../lib/analytics/server-events';
 import { z } from 'zod';
 import { assertTrustedMutation } from '../../../../../../lib/auth/csrf';
 import { apiError, requestId } from '../../../../../../lib/auth/http';
@@ -35,6 +36,8 @@ export async function POST(request: Request, context: { params: Promise<{ moment
     }
     if (!authorization && participant) authorization = await createDownloadAuthorization({ momentId, participantId: participant.id, variant: input.variant });
     if (!authorization) throw new HttpError(404, 'MOMENT_NOT_AVAILABLE', 'Momen tidak tersedia.');
+    const analyticsEventId = publicEventId ?? participant?.eventId;
+    if (analyticsEventId) void trackServerEvent({ eventId: analyticsEventId, participantId: null, name: 'moment_downloaded', properties: {} }).catch(() => undefined);
     return NextResponse.json({ data: authorization, request_id: id });
   } catch (error) {
     return apiError(error, id);

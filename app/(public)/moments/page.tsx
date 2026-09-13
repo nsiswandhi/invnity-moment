@@ -9,7 +9,7 @@ import { PhotoPreview } from '../../../components/camera/PhotoPreview';
 import { CategoryCards } from '../../../components/moments/CategoryCards';
 import { DeleteMomentDialog } from '../../../components/moments/DeleteMomentDialog';
 import { MyMomentsGrid, type DisplayMoment } from '../../../components/moments/MyMomentsGrid';
-import { trackClientEvent } from '../../../lib/analytics/client-events';
+import { trackClientEvent, trackClientEventOnce } from '../../../lib/analytics/client-events';
 import { type CursorPage, type MomentCategory, type MomentRecord } from '../../../lib/db/types';
 import { deleteOwnedMomentRequest, loadOwnedMoments, mergeOwnedMoments, updateOwnedMomentRequest } from '../../../lib/moments/personal-moments';
 import { prepareImageForUpload } from '../../../lib/moments/upload-preparation';
@@ -32,7 +32,7 @@ export default function MomentsPage() {
   const writeSaved = useCallback((id: string, moments: DisplayMoment[]) => { try { localStorage.setItem(storageKey(id), JSON.stringify(moments.map(({ thumbnailUrl: _thumbnailUrl, displayUrl: _displayUrl, ...moment }) => moment))); } catch { /* local cache is an enhancement, server remains authoritative */ } }, []);
   useEffect(() => {
     let active = true;
-    const load = async () => { try { const response = await fetch('/api/v1/me'); const payload = await response.json() as MePayload; if (!response.ok || !payload.data?.participant) throw new Error(payload.error?.message || 'Sesi kamu belum tersedia.'); if (!active) return; const me = payload.data.participant; setParticipant(me); setQuota(payload.data.quota?.maxActiveMoments || 10); const local = readSaved(me.id); const server = await loadOwnedMoments(fetch, null); if (active) setPage(mergeOwnedMoments(server, local)); trackClientEvent('gallery_view', { source: 'moments' }); } catch (reason) { if (active) setError(reason instanceof Error ? reason.message : 'Sesi kamu belum tersedia.'); } finally { if (active) setLoading(false); } };
+    const load = async () => { try { const response = await fetch('/api/v1/me'); const payload = await response.json() as MePayload; if (!response.ok || !payload.data?.participant) throw new Error(payload.error?.message || 'Sesi kamu belum tersedia.'); if (!active) return; const me = payload.data.participant; setParticipant(me); setQuota(payload.data.quota?.maxActiveMoments || 10); const local = readSaved(me.id); const server = await loadOwnedMoments(fetch, null); if (active) setPage(mergeOwnedMoments(server, local)); trackClientEventOnce('my-moments-gallery', 'gallery_view', { source: 'moments' }); } catch (reason) { if (active) setError(reason instanceof Error ? reason.message : 'Sesi kamu belum tersedia.'); } finally { if (active) setLoading(false); } };
     void load(); return () => { active = false; };
   }, [readSaved]);
 

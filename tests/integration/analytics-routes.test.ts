@@ -54,6 +54,28 @@ describe('analytics routes', () => {
     expect(trackServerEvent).not.toHaveBeenCalled();
   });
 
+  it('rejects non-JSON analytics requests before parsing or persistence', async () => {
+    const response = await record(new Request('https://moments.example.test/api/v1/analytics', {
+      method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ name: 'qr_landing' }),
+    }));
+
+    expect(response.status).toBe(415);
+    expect(await response.json()).toMatchObject({ error: { code: 'ANALYTICS_CONTENT_TYPE_INVALID' } });
+    expect(trackServerEvent).not.toHaveBeenCalled();
+  });
+
+  it('rejects analytics bodies over the limit before JSON parsing', async () => {
+    const response = await record(new Request('https://moments.example.test/api/v1/analytics', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'content-length': '8193' },
+      body: JSON.stringify({ name: 'qr_landing' }),
+    }));
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toMatchObject({ error: { code: 'ANALYTICS_BODY_TOO_LARGE' } });
+    expect(trackServerEvent).not.toHaveBeenCalled();
+  });
+
   it('requires an admin session for the aggregate metrics and never claims installs', async () => {
     const response = await summary(new Request('https://moments.example.test/api/v1/admin/analytics'));
     expect(response.status).toBe(200);

@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
+import { trackServerEvent } from '../../../../../../lib/analytics/server-events';
 import { z } from 'zod';
 import { assertTrustedMutation } from '../../../../../../lib/auth/csrf';
 import { apiError, requestId } from '../../../../../../lib/auth/http';
@@ -23,6 +24,7 @@ async function setLike(request: Request, context: { params: Promise<{ momentId: 
     const { eventId } = getPublicEventConfig();
     const anonymous = identity(request);
     const result = await toggleLike({ eventId, momentId, anonymousUserKey: anonymous.key, liked });
+    if (result.liked) void trackServerEvent({ eventId, participantId: null, name: 'moment_liked', properties: {} }).catch(() => undefined);
     const response = NextResponse.json({ data: result, request_id: id });
     if (anonymous.isNew) response.cookies.set({ name: ANONYMOUS_LIKE_COOKIE, value: anonymous.key, httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 365 });
     return response;

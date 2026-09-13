@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { trackClientEventOnce } from '../../lib/analytics/client-events';
 import type { CursorPage, MomentCategory, PublicMoment } from '../../lib/db/types';
 import type { PublicEventState } from '../../lib/db/repositories/public-album';
 import { AlbumGrid } from './AlbumGrid';
@@ -24,6 +25,7 @@ export function PublicAlbum() {
       if (!response.ok || !payload.data) throw new Error(payload.error?.message || 'Album belum dapat dimuat.');
       setPage((current) => cursor ? { data: [...current.data, ...payload.data!.data], nextCursor: payload.data!.nextCursor } : payload.data!);
       if (!cursor) setEvent(payload.event ?? null);
+      if (!cursor) trackClientEventOnce('public-album-gallery', 'gallery_view', { source: 'public' });
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Album belum dapat dimuat.'); } finally { setLoading(false); }
   };
   useEffect(() => { void load(null); }, []);

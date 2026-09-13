@@ -14,9 +14,11 @@ describe('security hardening', () => {
 
   it('sets a CSP and defensive headers without blocking signed R2 images', () => {
     const headers = new Headers();
-    applySecurityHeaders(headers, '7b7dc98e-77ff-4f00-a63f-d8257e927a5d', { NODE_ENV: 'production' });
+    applySecurityHeaders(headers, '7b7dc98e-77ff-4f00-a63f-d8257e927a5d', { NODE_ENV: 'production' }, 'test-csp-nonce');
     expect(contentSecurityPolicy()).toContain("img-src 'self' blob: data: https://*.r2.cloudflarestorage.com");
-    expect(headers.get('content-security-policy')).toContain("default-src 'self'");
+    expect(headers.get('content-security-policy')).toContain("script-src 'self' 'nonce-test-csp-nonce'");
+    expect(headers.get('content-security-policy')).toContain("style-src 'self' 'nonce-test-csp-nonce'");
+    expect(headers.get('content-security-policy')).not.toContain("'unsafe-inline'");
     expect(headers.get('x-content-type-options')).toBe('nosniff');
     expect(headers.get('cross-origin-resource-policy')).toBe('same-origin');
     expect(headers.get('x-request-id')).toBe('7b7dc98e-77ff-4f00-a63f-d8257e927a5d');

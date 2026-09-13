@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../../lib/errors/http-error';
 
-const { assertTrustedMutation, authorizePublicDownload, clientRateLimitKey, createDownloadAuthorization, enforceRateLimit, getPublicEventState, getPublishedMoment, listPublishedMoments, requireParticipant, toggleLike } = vi.hoisted(() => ({
+const { assertTrustedMutation, authorizePublicDownload, clientRateLimitKey, createDownloadAuthorization, enforceRateLimit, getPublicEventState, getPublishedMoment, listPublishedMoments, requireParticipant, toggleLike, trackServerEvent } = vi.hoisted(() => ({
   assertTrustedMutation: vi.fn(),
   authorizePublicDownload: vi.fn(),
   clientRateLimitKey: vi.fn().mockReturnValue('anonymous-client'),
@@ -12,6 +12,7 @@ const { assertTrustedMutation, authorizePublicDownload, clientRateLimitKey, crea
   listPublishedMoments: vi.fn(),
   requireParticipant: vi.fn(),
   toggleLike: vi.fn(),
+  trackServerEvent: vi.fn(),
 }));
 
 vi.mock('../../lib/auth/csrf', () => ({ assertTrustedMutation }));
@@ -19,6 +20,7 @@ vi.mock('../../lib/auth/rate-limits', () => ({ clientRateLimitKey, enforceRateLi
 vi.mock('../../lib/auth/session', () => ({ requireParticipant }));
 vi.mock('../../lib/db/repositories/public-album', () => ({ authorizePublicDownload, getPublicEventState, getPublishedMoment, listPublishedMoments, toggleLike }));
 vi.mock('../../lib/media/upload-service', () => ({ createDownloadAuthorization }));
+vi.mock('../../lib/analytics/server-events', () => ({ trackServerEvent }));
 
 import { GET as list } from '../../app/api/v1/moments/route';
 import { GET as detail } from '../../app/api/v1/moments/[momentId]/route';
@@ -42,6 +44,7 @@ describe('public album routes', () => {
     requireParticipant.mockReset();
     createDownloadAuthorization.mockReset();
     authorizePublicDownload.mockResolvedValue({ downloadUrl: 'https://cdn.test/signed-download', expiresAt: '2026-09-10T00:01:00.000Z' });
+    trackServerEvent.mockResolvedValue(undefined);
   });
 
   it('uses the public event, default limit, cursor, and category filter', async () => {
@@ -69,6 +72,7 @@ describe('public album routes', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('set-cookie')).toContain('invnity_like_key=');
     expect(toggleLike).toHaveBeenCalledWith({ eventId, momentId, anonymousUserKey: expect.stringMatching(/^[A-Za-z0-9_-]{40,}$/), liked: true });
+    expect(trackServerEvent).toHaveBeenCalledWith({ eventId, participantId: null, name: 'moment_liked', properties: {} });
     expect(enforceRateLimit).toHaveBeenCalledWith('moment-like', 'anonymous-client', 60, 60_000);
   });
 
@@ -110,6 +114,7 @@ describe('public album routes', () => {
     expect(response.status).toBe(200);
     expect(authorizePublicDownload).toHaveBeenCalledWith({ eventId, momentId, variant: 'display' });
     expect(createDownloadAuthorization).not.toHaveBeenCalled();
+    expect(trackServerEvent).toHaveBeenCalledWith({ eventId, participantId: null, name: 'moment_downloaded', properties: {} });
   });
 
   it('passes logged-in like mutations through the CSRF guard while using the anonymous identity', async () => {
