@@ -28,4 +28,17 @@ describe('R2-compatible client', () => {
 
     expect(new URL(url).searchParams.has('response-content-disposition')).toBe(false);
   });
+
+  it('lists a bounded page of objects from the R2 bucket', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(`<?xml version="1.0"?><ListBucketResult><Contents><Key>events/event-1/one</Key><Size>12</Size><ETag>&quot;etag-1&quot;</ETag></Contents><NextContinuationToken>next-page</NextContinuationToken></ListBucketResult>`, { status: 200 }));
+    vi.stubGlobal('fetch', fetch);
+    const client = createR2Client(environment) as ReturnType<typeof createR2Client> & { listObjects?: (input: { prefix: string; maxKeys: number; continuationToken?: string }) => Promise<unknown> };
+
+    expect(client.listObjects).toEqual(expect.any(Function));
+    if (!client.listObjects) return;
+    await expect(client.listObjects({ prefix: 'events/event-1/', maxKeys: 25 })).resolves.toEqual({
+      objects: [{ key: 'events/event-1/one', size: 12, etag: 'etag-1' }], nextCursor: 'next-page',
+    });
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('list-type=2'), { method: 'GET', headers: undefined, body: undefined });
+  });
 });

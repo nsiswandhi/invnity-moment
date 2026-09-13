@@ -9,6 +9,7 @@ export type R2Client = {
   getObject(key: string): Promise<R2Object>;
   putObject(key: string, body: Buffer, contentType: string): Promise<void>;
   deleteObject(key: string): Promise<void>;
+  listObjects(input: { prefix: string; maxKeys: number; continuationToken?: string }): Promise<{ objects: Array<{ key: string; size: number; etag: string | null }>; nextCursor: string | null }>;
 };
 
 type R2Config = { endpoint: string; accessKeyId: string; secretAccessKey: string; bucketName: string };
@@ -36,7 +37,7 @@ function signingKey(secret: string, date: string): Buffer {
   return hmac(hmac(hmac(hmac(`AWS4${secret}`, date), REGION), SERVICE), 'aws4_request');
 }
 
-function presignedUrl(settings: R2Config, method: 'GET' | 'HEAD' | 'PUT' | 'DELETE', key: string, expiresInSeconds: number): string {
+function presignedUrl(settings: R2Config, method: 'GET' | 'HEAD' | 'PUT' | 'DELETE', key: string, expiresInSeconds: number, extraQuery: Record<string, string> = {}): string {
   if (!Number.isInteger(expiresInSeconds) || expiresInSeconds < 1 || expiresInSeconds > 900) throw new Error('R2 presign expiry must be between 1 and 900 seconds');
   const now = new Date();
   const dates = amzDate(now);
@@ -45,6 +46,7 @@ function presignedUrl(settings: R2Config, method: 'GET' | 'HEAD' | 'PUT' | 'DELE
   const query: Record<string, string> = {
     'X-Amz-Algorithm': 'AWS4-HMAC-SHA256', 'X-Amz-Credential': credential, 'X-Amz-Date': dates.long,
     'X-Amz-Expires': String(expiresInSeconds), 'X-Amz-SignedHeaders': 'host',
+    ...extraQuery,
   };
   const canonicalQuery = Object.entries(query).sort(([left], [right]) => left.localeCompare(right)).map(([name, value]) => `${encode(name)}=${encode(value)}`).join('&');
   const path = `/${encode(settings.bucketName)}/${key.split('/').map(encode).join('/')}`;
@@ -57,6 +59,29 @@ function presignedUrl(settings: R2Config, method: 'GET' | 'HEAD' | 'PUT' | 'DELE
 
 function assertSafeObjectKey(key: string): void {
   if (!key || key.startsWith('/') || key.endsWith('/') || key.includes('\\') || /(^|\/)\.\.?($|\/)/.test(key) || /[\u0000-\u001f\u007f]/.test(key)) throw new Error('INVALID_R2_OBJECT_KEY');
+}
+
+function decodeXml(value: string): string {
+  return value.replace(/&quot;|&amp;|&lt;|&gt;|&#39;|&#x27;|&#(\d+);/g, (entity, decimal) => {
+    if (decimal) return String.fromCodePoint(Number(decimal));
+    return ({ '&quot;': '"', '&amp;': '&', '&lt;': '<', '&gt;': '>', '&#39;': "'", '&#x27;': "'" } as Record<string, string>)[entity] ?? entity;
+  });
+}
+
+function xmlValue(xml: string, tag: string): string | null {
+  const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
+  return match ? decodeXml(match[1]) : null;
+}
+
+function parseListBucketResponse(xml: string): { objects: Array<{ key: string; size: number; etag: string | null }>; nextCursor: string | null } {
+  const objects: Array<{ key: string; size: number; etag: string | null }> = [];
+  for (const match of xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)) {
+    const key = xmlValue(match[1], 'Key');
+    if (!key) continue;
+    const rawEtag = xmlValue(match[1], 'ETag');
+    objects.push({ key, size: Number(xmlValue(match[1], 'Size') ?? 0), etag: rawEtag?.replace(/^"|"$/g, '') || null });
+  }
+  return { objects, nextCursor: xmlValue(xml, 'NextContinuationToken') };
 }
 
 async function request(settings: R2Config, method: 'GET' | 'HEAD' | 'PUT' | 'DELETE', key: string, body?: Buffer, contentType?: string): Promise<Response> {
@@ -85,5 +110,15 @@ export function createR2Client(environment = process.env): R2Client {
     },
     async putObject(key, body, contentType) { await request(settings, 'PUT', key, body, contentType); },
     async deleteObject(key) { await request(settings, 'DELETE', key); },
+    async listObjects({ prefix, maxKeys, continuationToken }) {
+      if (!prefix || prefix.startsWith('/') || prefix.includes('\\') || /[\u0000-\u001f\u007f]/.test(prefix)) throw new Error('INVALID_R2_LIST_PREFIX');
+      if (!Number.isInteger(maxKeys) || maxKeys < 1 || maxKeys > 1000) throw new Error('R2_LIST_MAX_KEYS_INVALID');
+      const extraQuery: Record<string, string> = { 'list-type': '2', prefix, 'max-keys': String(maxKeys) };
+      if (continuationToken) extraQuery['continuation-token'] = continuationToken;
+      const url = presignedUrl(settings, 'GET', '', 900, extraQuery);
+      const response = await fetch(url, { method: 'GET', headers: undefined, body: undefined });
+      if (!response.ok) throw new Error(`R2_LIST_FAILED_${response.status}`);
+      return parseListBucketResponse(await response.text());
+    },
   };
 }
