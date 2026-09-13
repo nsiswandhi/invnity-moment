@@ -39,6 +39,7 @@ describe('security hardening', () => {
 
     expect(policy).toMatch(/script-src 'self'(?: 'unsafe-eval')? 'nonce-/);
     expect(nonce).toEqual(expect.any(String));
+    expect(nonce).toHaveLength(48);
     expect(response.headers.get('x-middleware-request-content-security-policy')).toBe(policy);
     expect(response.headers.get('x-middleware-request-x-nonce')).toBe(nonce);
   });
