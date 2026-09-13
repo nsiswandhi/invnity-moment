@@ -1,14 +1,17 @@
-import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { HttpError } from '../errors/http-error';
 import { toExpectedDatabaseHttpError } from '../errors/database-error';
+import { REQUEST_ID_HEADER, resolveRequestId } from '../security/request-id';
+import { safeLog } from '../security/redaction';
 
-export function requestId(): string { return randomUUID(); }
+export function requestId(request?: Request): string { return resolveRequestId(request?.headers.get(REQUEST_ID_HEADER)); }
 export function apiError(error: unknown, id = requestId()): NextResponse {
-  if (error instanceof HttpError) return NextResponse.json({ error: { code: error.code, message: error.publicMessage }, request_id: id }, { status: error.status });
-  if (error instanceof ZodError) return NextResponse.json({ error: { code: 'VALIDATION_ERROR', message: 'Data pendaftaran belum lengkap atau tidak valid.' }, request_id: id }, { status: 400 });
+  const response = (body: object, status: number) => NextResponse.json(body, { status, headers: { [REQUEST_ID_HEADER]: id } });
+  if (error instanceof HttpError) return response({ error: { code: error.code, message: error.publicMessage }, request_id: id }, error.status);
+  if (error instanceof ZodError) return response({ error: { code: 'VALIDATION_ERROR', message: 'Data pendaftaran belum lengkap atau tidak valid.' }, request_id: id }, 400);
   const databaseError = toExpectedDatabaseHttpError(error);
-  if (databaseError) return NextResponse.json({ error: { code: databaseError.code, message: databaseError.publicMessage }, request_id: id }, { status: databaseError.status });
-  return NextResponse.json({ error: { code: 'INTERNAL_ERROR', message: 'Terjadi gangguan. Silakan coba lagi.' }, request_id: id }, { status: 500 });
+  if (databaseError) return response({ error: { code: databaseError.code, message: databaseError.publicMessage }, request_id: id }, databaseError.status);
+  safeLog('api_error', { requestId: id, error: error instanceof Error ? error.message : String(error) });
+  return response({ error: { code: 'INTERNAL_ERROR', message: 'Terjadi gangguan. Silakan coba lagi.' }, request_id: id }, 500);
 }
