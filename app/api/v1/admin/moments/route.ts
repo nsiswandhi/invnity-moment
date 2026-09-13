@@ -9,7 +9,7 @@ import { getPublicEventConfig } from '../../../../../lib/event-config';
 const querySchema = z.object({ visibility: z.enum(['recent', 'hidden']).default('recent'), limit: z.coerce.number().int().min(1).max(100).default(30) });
 
 export async function GET(request: Request) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     await enforceRateLimit('admin-moments', clientRateLimitKey(request), 120, 60_000);
     await requireAdmin(request);

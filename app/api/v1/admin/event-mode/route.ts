@@ -10,7 +10,7 @@ import { getPublicEventConfig } from '../../../../../lib/event-config';
 const schema = z.object({ mode: z.enum(['live', 'maintenance', 'archived']) });
 
 export async function PATCH(request: Request) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('admin-event-mode', clientRateLimitKey(request), 20, 60_000);

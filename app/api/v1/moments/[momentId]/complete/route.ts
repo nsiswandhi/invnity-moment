@@ -10,7 +10,7 @@ import { completeUpload } from '../../../../../../lib/media/upload-service';
 const completeSchema = z.object({ category: z.enum(MOMENT_CATEGORIES) });
 
 export async function POST(request: Request, context: { params: Promise<{ momentId: string }> }) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('moment-complete', clientRateLimitKey(request), 20, 60_000);

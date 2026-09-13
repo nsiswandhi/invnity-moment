@@ -8,7 +8,7 @@ import { createDatabaseClient } from '../../../../../../lib/db/client';
 import { validateParticipantInput } from '../../../../../../lib/validation/participant';
 
 export async function POST(request: Request, context: { params: Promise<{ event: string }> }) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('registration', clientRateLimitKey(request), 8, 60_000);

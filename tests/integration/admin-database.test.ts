@@ -27,6 +27,7 @@ async function moderate(target: string, visibility: 'hidden' | 'published', scop
 describe('Task 7 migrations executed in PostgreSQL', () => {
   beforeAll(async () => {
     db = new PGlite({ extensions: { pgcrypto } });
+    await db.exec('create role anon; create role authenticated; create role service_role;');
     const directory = resolve('supabase/migrations');
     for (const file of readdirSync(directory).filter((name) => name.endsWith('.sql')).sort()) {
       await db.exec(readFileSync(resolve(directory, file), 'utf8'));
@@ -83,6 +84,19 @@ describe('Task 7 migrations executed in PostgreSQL', () => {
     const sql = operation === 'update' ? "update moderation_actions set reason = 'Tampered'" : `${operation === 'truncate' ? 'truncate' : 'delete from'} moderation_actions`;
     await rejectSql(sql, [], 'MODERATION_AUDIT_IMMUTABLE');
     expect((await db.query('select action, reason from moderation_actions')).rows).toEqual([{ action: 'HIDE', reason: 'Original reason' }]);
+  });
+
+  it('limits analytics event and aggregate RPC execution to the service role', async () => {
+    const permissions = await db.query<{ anon_record: boolean; anon_funnel: boolean; anon_sponsor: boolean; service_record: boolean; table_read: boolean }>(`
+      select
+        has_function_privilege('anon', 'record_analytics_event(uuid,uuid,text,jsonb)', 'execute') as anon_record,
+        has_function_privilege('anon', 'get_analytics_funnel_summary(uuid)', 'execute') as anon_funnel,
+        has_function_privilege('anon', 'get_sponsor_summary(uuid)', 'execute') as anon_sponsor,
+        has_function_privilege('service_role', 'record_analytics_event(uuid,uuid,text,jsonb)', 'execute') as service_record,
+        has_table_privilege('anon', 'analytics_events', 'select') as table_read
+    `);
+
+    expect(permissions.rows).toEqual([{ anon_record: false, anon_funnel: false, anon_sponsor: false, service_record: true, table_read: false }]);
   });
 
   describe.each(['maintenance', 'archived'])('%s mode', (mode) => {

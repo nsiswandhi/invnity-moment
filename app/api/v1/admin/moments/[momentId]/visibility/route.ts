@@ -11,7 +11,7 @@ const momentIdSchema = z.string().uuid();
 const visibilitySchema = z.discriminatedUnion('visibility', [z.object({ visibility: z.literal('hidden'), reason: z.string().trim().min(1).max(500) }), z.object({ visibility: z.literal('published') })]);
 
 export async function PATCH(request: Request, context: { params: Promise<{ momentId: string }> }) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('admin-moderation', clientRateLimitKey(request), 60, 60_000);

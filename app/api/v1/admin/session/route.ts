@@ -10,7 +10,7 @@ import { HttpError } from '../../../../../lib/errors/http-error';
 const schema = z.object({ email: z.string().trim().email().max(254), accessToken: z.string().min(1).max(512) });
 
 export async function POST(request: Request) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('admin-auth', clientRateLimitKey(request), 8, 60_000);

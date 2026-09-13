@@ -38,3 +38,31 @@ This applies `0010_task8_analytics_security.sql`, creating the analytics index a
 | `git diff --check` | passed |
 
 The single skipped test is the existing Supabase-dependent quota integration test; it requires separately configured local Supabase integration services.
+
+## Review follow-up — 2026-09-13
+
+### Security corrections
+
+- Added `0011_task8_analytics_rpc_permissions.sql`. It enables RLS on `analytics_events`, removes direct table access for `public`, `anon`, and `authenticated`, revokes default `PUBLIC` execute rights from all three analytics RPCs, and grants the required access only to `service_role`.
+- Added a PostgreSQL regression test that verifies anonymous callers have no execution or table-read privilege while `service_role` retains the server-side event writer permission.
+- `apiError` now logs the stable `UNEXPECTED` category instead of arbitrary `Error.message` text. Structured redaction now also recurses through nested data and treats credential-bearing phrases and `Error` instances as sensitive.
+- Updated every existing API route that generated a fresh request ID to derive it from the incoming request. The legacy admin summary route also sets that same ID on its own direct success response; middleware continues setting the request ID and defensive headers for all requests.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| New analytics permission regression | passed |
+| New log-redaction regression | passed |
+| New request-ID propagation regression | passed |
+| Full unit/integration suite | 260 passed, 1 skipped |
+| Typecheck | passed |
+| Lint | passed |
+| Production build | passed |
+| `git diff --check` | passed |
+
+Apply the new migration after deployment preparation:
+
+```powershell
+npx supabase db push
+```

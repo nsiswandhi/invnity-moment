@@ -5,7 +5,7 @@ import { getSessionTokenHash, requireParticipant, SESSION_COOKIE_NAME } from '..
 import { createDatabaseClient } from '../../../../../lib/db/client';
 
 export async function POST(request: Request) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await requireParticipant(request);

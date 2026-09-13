@@ -6,7 +6,7 @@ import { getPublicEventConfig } from '../../../../../lib/event-config';
 import { getSystemHealth } from '../../../../../lib/health/checks';
 
 export async function GET(request: Request) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     await enforceRateLimit('admin-health', clientRateLimitKey(request), 30, 60_000);
     await requireAdmin(request);

@@ -14,7 +14,7 @@ function identity(request: Request): { key: string; isNew: boolean } {
 }
 
 async function setLike(request: Request, context: { params: Promise<{ momentId: string }> }, liked: boolean) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('moment-like', clientRateLimitKey(request), 60, 60_000);

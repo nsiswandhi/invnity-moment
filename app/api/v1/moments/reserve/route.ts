@@ -14,7 +14,7 @@ const reserveSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('moment-reserve', clientRateLimitKey(request), 10, 60_000);

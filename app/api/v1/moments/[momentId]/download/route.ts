@@ -12,7 +12,7 @@ import { createDownloadAuthorization } from '../../../../../../lib/media/upload-
 const downloadSchema = z.object({ variant: z.enum(['display', 'original']).default('display') });
 
 export async function POST(request: Request, context: { params: Promise<{ momentId: string }> }) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('moment-download', clientRateLimitKey(request), 60, 60_000);

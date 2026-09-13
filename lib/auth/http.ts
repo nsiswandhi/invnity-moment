@@ -12,6 +12,6 @@ export function apiError(error: unknown, id = requestId()): NextResponse {
   if (error instanceof ZodError) return response({ error: { code: 'VALIDATION_ERROR', message: 'Data pendaftaran belum lengkap atau tidak valid.' }, request_id: id }, 400);
   const databaseError = toExpectedDatabaseHttpError(error);
   if (databaseError) return response({ error: { code: databaseError.code, message: databaseError.publicMessage }, request_id: id }, databaseError.status);
-  safeLog('api_error', { requestId: id, error: error instanceof Error ? error.message : String(error) });
+  safeLog('api_error', { requestId: id, errorCode: 'UNEXPECTED' });
   return response({ error: { code: 'INTERNAL_ERROR', message: 'Terjadi gangguan. Silakan coba lagi.' }, request_id: id }, 500);
 }

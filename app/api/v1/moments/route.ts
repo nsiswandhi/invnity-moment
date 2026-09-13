@@ -14,7 +14,7 @@ const querySchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     await enforceRateLimit('public-album-list', clientRateLimitKey(request), 120, 60_000);
     const url = new URL(request.url);

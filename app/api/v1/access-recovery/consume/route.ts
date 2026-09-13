@@ -6,7 +6,7 @@ import { consumeRecoveryToken } from '../../../../../lib/auth/recovery';
 import { createParticipantSession } from '../../../../../lib/auth/session';
 
 export async function POST(request: Request) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     const { token } = z.object({ token: z.string().min(16).max(512) }).parse(await request.json());

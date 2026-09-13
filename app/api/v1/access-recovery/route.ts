@@ -9,7 +9,7 @@ const requestSchema = z.object({ event: z.string().uuid(), email: z.string().ema
 const accepted = { data: { message: 'Jika email terdaftar, tautan pemulihan akan dikirim.' } };
 
 export async function POST(request: Request) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('recovery', clientRateLimitKey(request), 5, 60_000);

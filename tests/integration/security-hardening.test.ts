@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { apiError, requestId } from '../../lib/auth/http';
 import { HttpError } from '../../lib/errors/http-error';
 import { applySecurityHeaders, contentSecurityPolicy } from '../../lib/security/headers';
-import { redactLogFields } from '../../lib/security/redaction';
+import { redactLogFields, safeLog } from '../../lib/security/redaction';
 import { resolveRequestId } from '../../lib/security/request-id';
 
 describe('security hardening', () => {
@@ -31,5 +31,22 @@ describe('security hardening', () => {
     expect(await response.json()).toEqual({ error: { code: 'INTERNAL_ERROR', message: 'Terjadi gangguan. Silakan coba lagi.' }, request_id: '7b7dc98e-77ff-4f00-a63f-d8257e927a5d' });
     expect(response.headers.get('x-request-id')).toBe('7b7dc98e-77ff-4f00-a63f-d8257e927a5d');
     expect(apiError(new HttpError(429, 'RATE_LIMITED', 'Terlalu banyak permintaan.'), 'id').status).toBe(429);
+  });
+
+  it('never writes arbitrary secret-bearing error text to structured logs', () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+    safeLog('request_failed', { reason: 'Authorization failed for private-credential' });
+    apiError(new Error('access token private-credential'), '7b7dc98e-77ff-4f00-a63f-d8257e927a5d');
+
+    const output = log.mock.calls.flat().join('\n');
+    expect(output).not.toContain('private-credential');
+    expect(output).not.toContain('access token');
+    expect(JSON.parse(String(log.mock.calls[1][0]))).toEqual({
+      event: 'api_error',
+      requestId: '7b7dc98e-77ff-4f00-a63f-d8257e927a5d',
+      errorCode: 'UNEXPECTED',
+    });
+    log.mockRestore();
   });
 });

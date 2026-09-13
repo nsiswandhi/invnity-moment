@@ -7,7 +7,7 @@ import { getPublicEventConfig } from '../../../../../lib/event-config';
 import { readAnonymousLikeKey } from '../../../../../lib/likes/anonymous-identity';
 
 export async function GET(request: Request, context: { params: Promise<{ momentId: string }> }) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     await enforceRateLimit('public-album-detail', clientRateLimitKey(request), 120, 60_000);
     const { momentId: rawMomentId } = await context.params;

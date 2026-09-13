@@ -11,7 +11,7 @@ const momentIdSchema = z.string().uuid();
 const patchSchema = z.object({ category: z.enum(MOMENT_CATEGORIES) });
 
 export async function PATCH(request: Request, context: { params: Promise<{ momentId: string }> }) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('owned-moment-update', clientRateLimitKey(request), 30, 60_000);
@@ -26,7 +26,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ momen
 }
 
 export async function DELETE(request: Request, context: { params: Promise<{ momentId: string }> }) {
-  const id = requestId();
+  const id = requestId(request);
   try {
     assertTrustedMutation(request);
     await enforceRateLimit('owned-moment-delete', clientRateLimitKey(request), 20, 60_000);
