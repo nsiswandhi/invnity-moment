@@ -1,14 +1,15 @@
 import { REQUEST_ID_HEADER } from './request-id';
 
-export function contentSecurityPolicy(nonce?: string): string {
+export function contentSecurityPolicy(nonce?: string, environment: Pick<NodeJS.ProcessEnv, 'NODE_ENV'> = process.env): string {
   const nonceSource = nonce ? ` 'nonce-${nonce}'` : '';
+  const developmentSource = environment.NODE_ENV === 'production' ? '' : " 'unsafe-eval'";
   return [
     "default-src 'self'",
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
-    `script-src 'self'${nonceSource}`,
+    `script-src 'self'${developmentSource}${nonceSource}`,
     `style-src 'self'${nonceSource}`,
     "img-src 'self' blob: data: https://*.r2.cloudflarestorage.com",
     "media-src 'self' blob:",
@@ -17,7 +18,7 @@ export function contentSecurityPolicy(nonce?: string): string {
 }
 
 export function applySecurityHeaders(headers: Headers, id: string, environment = process.env, nonce?: string): void {
-  headers.set('content-security-policy', contentSecurityPolicy(nonce));
+  headers.set('content-security-policy', contentSecurityPolicy(nonce, environment));
   headers.set('cross-origin-opener-policy', 'same-origin');
   headers.set('cross-origin-resource-policy', 'same-origin');
   headers.set('permissions-policy', 'camera=(self), microphone=(), geolocation=()');

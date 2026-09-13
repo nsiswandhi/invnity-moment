@@ -27,12 +27,17 @@ describe('security hardening', () => {
     expect(headers.get('strict-transport-security')).toContain('max-age=');
   });
 
+  it('allows Next development eval only outside production', () => {
+    expect(contentSecurityPolicy('dev-nonce', { NODE_ENV: 'development' })).toContain("'unsafe-eval'");
+    expect(contentSecurityPolicy('prod-nonce', { NODE_ENV: 'production' })).not.toContain("'unsafe-eval'");
+  });
+
   it('forwards the exact nonce-bearing CSP policy to both Next request and response', () => {
     const response = middleware(new NextRequest('https://moments.example.test/'));
     const policy = response.headers.get('content-security-policy');
     const nonce = policy?.match(/'nonce-([^']+)'/)?.[1];
 
-    expect(policy).toContain("script-src 'self' 'nonce-");
+    expect(policy).toMatch(/script-src 'self'(?: 'unsafe-eval')? 'nonce-/);
     expect(nonce).toEqual(expect.any(String));
     expect(response.headers.get('x-middleware-request-content-security-policy')).toBe(policy);
     expect(response.headers.get('x-middleware-request-x-nonce')).toBe(nonce);

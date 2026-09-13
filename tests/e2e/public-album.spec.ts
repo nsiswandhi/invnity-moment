@@ -4,7 +4,7 @@ const moment = { id: '1ef1d9e5-2d09-4c1e-84dd-9e7c6bb0c219', category: 'REUNI', 
 
 test('visitor can filter the public album, open a moment, like, and request a signed download', async ({ page }) => {
   let listCalls = 0;
-  await page.route('**/api/v1/moments?**', async (route) => {
+  await page.route('**/api/v1/moments**', async (route) => {
     listCalls += 1;
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { data: [moment], nextCursor: null }, request_id: 'list' }) });
   });
