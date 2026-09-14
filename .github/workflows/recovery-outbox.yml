@@ -1,0 +1,22 @@
+name: Process recovery email outbox
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Process pending recovery emails
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: >-
+          curl --fail-with-body --silent --show-error --max-time 60
+          -H "Authorization: Bearer ${CRON_SECRET}"
+          "https://moments.ialima.id/api/internal/recovery-outbox"

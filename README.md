@@ -6,6 +6,8 @@ Fondasi aplikasi Next.js App Router untuk menyimpan dan merayakan momen berharga
 
 Gunakan Node.js 22.x, salin `.env.example` menjadi `.env.local`, lalu isi variabel R2, `SESSION_SECRET`, dan `ADMIN_ACCESS_TOKEN` (masing-masing minimal 32 karakter). `ADMIN_ACCESS_TOKEN` dipakai operator untuk masuk ke `/admin`; jangan pernah memasukkannya ke kode frontend.
 
+Recovery email diproses segera oleh request dan tetap memiliki fallback outbox. Untuk retry terjadwal, simpan secret yang sama sebagai `CRON_SECRET` di Vercel Production dan GitHub Actions secret; workflow `recovery-outbox.yml` memanggil endpoint internal setiap 5 menit.
+
 ```bash
 npm install
 npm run dev

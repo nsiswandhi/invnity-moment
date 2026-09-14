@@ -44,4 +44,19 @@ describe('recovery acknowledgement', () => {
     await acknowledgement;
     expect(settled).toBe(true);
   });
+
+  it('attempts immediate delivery after successfully queueing a recovery email', async () => {
+    const queue = vi.fn().mockResolvedValue(undefined);
+    const process = vi.fn().mockResolvedValue({ claimed: 1, sent: 1, retried: 0, failed: 0 });
+
+    await queueRecoveryRequest({
+      email: 'sari@example.test',
+      eventId: 'bd928dad-a8c6-40af-a482-30df35ad5e5b',
+      queue,
+      process,
+      acknowledgementGate: vi.fn().mockResolvedValue(undefined),
+    });
+
+    expect(process).toHaveBeenCalledWith({ batchSize: 1 });
+  });
 });
