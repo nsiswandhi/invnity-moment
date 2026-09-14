@@ -113,6 +113,7 @@ describe('recovery outbox migration contract', () => {
     expect(recoveryOutboxMigration).toMatch(/for update of o skip locked/i);
     expect(recoveryOutboxMigration).toMatch(/claim_token = gen_random_uuid\(\)/i);
     expect(recoveryOutboxMigration).toMatch(/attempts = o\.attempts \+ 1/i);
+    expect(recoveryOutboxMigration).toMatch(/with eligible as[\s\S]*claimed as[\s\S]*select coalesce\(jsonb_agg[\s\S]*into v_claimed/i);
   });
 
   it('purges terminal or expired delivery records and bounds retries', () => {
