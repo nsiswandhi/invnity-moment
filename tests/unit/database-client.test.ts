@@ -49,6 +49,7 @@ describe('raw PostgREST RPC adapter', () => {
   });
 
   it('maps an unrecognised direct PostgREST error body to the opaque database-unavailable error', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
       code: 'PGRST999',
       message: 'unexpected database failure',
@@ -60,6 +61,17 @@ describe('raw PostgREST RPC adapter', () => {
 
     expect(error).toBeInstanceOf(HttpError);
     expect(error).toMatchObject({ status: 503, code: 'DATABASE_UNAVAILABLE' });
+    expect(consoleError).toHaveBeenCalledWith('PostgREST RPC failed', {
+      functionName: 'example_rpc',
+      status: 500,
+      error: {
+        code: 'PGRST999',
+        message: 'unexpected database failure',
+        details: 'internal schema detail',
+        hint: 'do not expose this',
+      },
+    });
+    consoleError.mockRestore();
   });
 
   it.each(['message', 'detail', 'details', 'hint'])('maps P0001 cursor errors carried in %s through the RPC adapter', async (field) => {

@@ -50,7 +50,11 @@ export function createDatabaseClient(environment = process.env): DatabaseClient 
         body: JSON.stringify(parameters),
       });
       const body = await parseJsonBody(response);
-      if (!response.ok) throw toExpectedDatabaseHttpError(asPostgrestError(body)) ?? new HttpError(503, 'DATABASE_UNAVAILABLE', 'Layanan data sedang tidak tersedia. Silakan coba lagi.');
+      if (!response.ok) {
+        const error = asPostgrestError(body);
+        console.error('PostgREST RPC failed', { functionName, status: response.status, error });
+        throw toExpectedDatabaseHttpError(error) ?? new HttpError(503, 'DATABASE_UNAVAILABLE', 'Layanan data sedang tidak tersedia. Silakan coba lagi.');
+      }
       return body as T;
     },
   };
