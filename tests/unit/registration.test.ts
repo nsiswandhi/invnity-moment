@@ -34,4 +34,11 @@ describe('registration client configuration', () => {
 
     expect(source).toContain('NEXT_PUBLIC_EVENT_ID: process.env.NEXT_PUBLIC_EVENT_ID');
   });
+
+  it('requests a numeric mobile keyboard for the batch field', () => {
+    const source = readFileSync(fileURLToPath(new URL('../../app/(public)/register/page.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toMatch(/name="batch"[^>]*type="number"/);
+    expect(source).toMatch(/name="batch"[^>]*inputMode="numeric"/);
+  });
 });
