@@ -7,7 +7,9 @@ const participantAuthMigration = readFileSync(resolve(process.cwd(), 'supabase/m
 const recoveryOutboxMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0004_recovery_outbox_hardening.sql'), 'utf8');
 const publicAlbumMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0007_task6_public_album.sql'), 'utf8');
 let task4FixMigration = '';
+let recoveryOutboxSchemaFixMigration = '';
 try { task4FixMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0005_task4_review_fixes.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
+try { recoveryOutboxSchemaFixMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0013_fix_recovery_outbox_recipient.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
 
 describe('initial schema reservation contract', () => {
   it('normalizes participant emails before enforcing event-local uniqueness', () => {
@@ -118,6 +120,12 @@ describe('recovery outbox migration contract', () => {
     expect(recoveryOutboxMigration).toMatch(/status = 'SENT'[\s\S]*sent_at < p_now - interval '1 day'/i);
     expect(recoveryOutboxMigration).toMatch(/status = case when attempts >= p_max_attempts then 'FAILED' else 'PENDING' end/i);
     expect(recoveryOutboxMigration).toMatch(/update recovery_delivery_outbox[\s\S]*status = 'FAILED'[\s\S]*attempts >= p_max_attempts/i);
+  });
+});
+
+describe('recovery outbox schema fix contract', () => {
+  it('removes the unused plaintext recipient email column', () => {
+    expect(recoveryOutboxSchemaFixMigration).toMatch(/alter table recovery_delivery_outbox\s+drop column if exists recipient_email/i);
   });
 });
 
