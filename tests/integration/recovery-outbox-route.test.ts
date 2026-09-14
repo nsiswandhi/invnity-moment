@@ -27,4 +27,17 @@ describe('recovery outbox scheduler route', () => {
     expect(await response.json()).toEqual({ data: { claimed: 1, sent: 1, retried: 0, failed: 0 } });
     expect(processRecoveryDeliveryOutbox).toHaveBeenCalledOnce();
   });
+
+  it('logs the internal failure while keeping the response generic', async () => {
+    const error = new Error('diagnostic failure');
+    processRecoveryDeliveryOutbox.mockRejectedValueOnce(error);
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const { GET } = await import('../../app/api/internal/recovery-outbox/route');
+    const response = await GET(new Request('https://moments.example.test/api/internal/recovery-outbox', { headers: { authorization: 'Bearer cron-secret-for-tests' } }));
+
+    expect(response.status).toBe(500);
+    expect(consoleError).toHaveBeenCalledWith('Recovery outbox processing failed', error);
+    consoleError.mockRestore();
+  });
 });

@@ -12,7 +12,8 @@ export async function GET(request: Request) {
   try {
     const result = await processRecoveryDeliveryOutbox({ batchSize: 10 });
     return Response.json({ data: result });
-  } catch {
+  } catch (error) {
+    console.error('Recovery outbox processing failed', error);
     return Response.json({ error: { code: 'RECOVERY_OUTBOX_FAILED', message: 'Recovery outbox processing failed.' } }, { status: 500 });
   }
 }
