@@ -7,12 +7,12 @@ test('participant can register, capture, categorize, and see a saved moment', as
     Object.defineProperty(HTMLVideoElement.prototype, 'videoHeight', { configurable: true, get: () => 480 });
     HTMLVideoElement.prototype.play = async () => undefined;
   });
-  await page.route('**/api/v1/events/invnity-moments-2026/participants', async (route) => route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ data: { participant: { id: 'participant-1', eventId: 'event-1', name: 'Sari Wijaya', batch: 'IA 5' } } }) }));
+  await page.route('**/api/v1/events/invnity-moments-2026/participants', async (route) => route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ data: { participant: { id: 'participant-1', eventId: 'event-1', name: 'Sari Wijaya', batch: '1996' } } }) }));
   await page.goto('/');
   await page.getByRole('link', { name: /Mulai abadikan momen/i }).click();
-  await page.getByLabel('Nama lengkap').fill('Sari Wijaya'); await page.getByLabel('Angkatan / batch').fill('IA 5'); await page.getByLabel('Email untuk akses kembali').fill('sari@example.test');
+  await page.getByLabel('Nama lengkap').fill('Sari Wijaya'); await page.getByLabel('Angkatan / batch').fill('1996'); await page.getByLabel('Email untuk akses kembali').fill('sari@example.test');
   await page.getByRole('button', { name: /Lanjutkan ke momen/i }).click();
-  await page.route('**/api/v1/me', async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { participant: { id: 'participant-1', eventId: 'event-1', name: 'Sari Wijaya', batch: 'IA 5' }, quota: { activeMoments: 0, maxActiveMoments: 10 } } }) }));
+  await page.route('**/api/v1/me', async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { participant: { id: 'participant-1', eventId: 'event-1', name: 'Sari Wijaya', batch: '1996' }, quota: { activeMoments: 0, maxActiveMoments: 10 } } }) }));
   await page.route('**/api/v1/me/moments**', async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { data: [], nextCursor: null } }) }));
   await page.goto('/moments'); await expect(page.getByRole('heading', { name: /Hai, Sari/i })).toBeVisible();
   await page.getByRole('button', { name: /Ambil momen/i }).click(); await page.getByRole('button', { name: /Aktifkan kamera/i }).click();
