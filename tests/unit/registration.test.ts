@@ -28,4 +28,10 @@ describe('registration client configuration', () => {
 
     expect(source).toContain('NEXT_PUBLIC_EVENT_SLUG: process.env.NEXT_PUBLIC_EVENT_SLUG');
   });
+
+  it('keeps the default event ID read direct for client bundler inlining', () => {
+    const source = readFileSync(fileURLToPath(new URL('../../lib/event-config.ts', import.meta.url)), 'utf8');
+
+    expect(source).toContain('NEXT_PUBLIC_EVENT_ID: process.env.NEXT_PUBLIC_EVENT_ID');
+  });
 });

@@ -18,7 +18,10 @@ export function getPublicEventSlug(environment: PublicEventEnvironment = { NEXT_
   return result.data.NEXT_PUBLIC_EVENT_SLUG;
 }
 
-export function getPublicEventConfig(environment: PublicEventEnvironment = process.env): PublicEventConfig {
+export function getPublicEventConfig(environment: PublicEventEnvironment = {
+  NEXT_PUBLIC_EVENT_ID: process.env.NEXT_PUBLIC_EVENT_ID,
+  NEXT_PUBLIC_EVENT_SLUG: process.env.NEXT_PUBLIC_EVENT_SLUG,
+}): PublicEventConfig {
   const result = publicEventSchema.safeParse(environment);
   if (!result.success) throw new Error('NEXT_PUBLIC_EVENT_ID and NEXT_PUBLIC_EVENT_SLUG must be configured for this event.');
   return { eventId: result.data.NEXT_PUBLIC_EVENT_ID, eventSlug: result.data.NEXT_PUBLIC_EVENT_SLUG };
