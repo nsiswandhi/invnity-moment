@@ -6,6 +6,7 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 const momentsPage = read('app/(public)/moments/page.tsx');
 const momentsGrid = read('components/moments/MyMomentsGrid.tsx');
+const eventHeader = read('components/brand/EventHeader.tsx');
 const styles = read('app/globals.css');
 
 const DEFAULT_CAPTION = 'Momen berharga bersama teman-teman reuni.';
@@ -30,9 +31,10 @@ describe('personal moments caption UI contract', () => {
   });
 
   it('uses the branded personal header and hero while omitting recovery and bottom navigation', () => {
-    expect(momentsPage).toMatch(/src="\/brand\/invnity-logo\.png"/);
-    expect(momentsPage).toMatch(/href="\/moments"/);
-    expect(momentsPage).toMatch(/href="\/album"/);
+    expect(momentsPage).toContain('<EventHeader activePage="moments" />');
+    expect(eventHeader).toMatch(/src="\/brand\/invnity-logo\.png"/);
+    expect(eventHeader).toMatch(/href="\/moments"/);
+    expect(eventHeader).toMatch(/href="\/album"/);
     expect(momentsPage).not.toContain('Akses kembali');
     expect(momentsPage).not.toContain('bottom-nav');
     expect(styles).toMatch(/\.moments-hero\s*\{[^}]*bgheader\.jpg/);

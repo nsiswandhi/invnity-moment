@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { trackClientEventOnce } from '../../lib/analytics/client-events';
 import type { CursorPage, MomentCategory, PublicMoment } from '../../lib/db/types';
@@ -30,5 +29,5 @@ export function PublicAlbum() {
   };
   useEffect(() => { void load(null); }, []);
   const selectCategory = (next: MomentCategory | null) => { setCategory(next); setPage(emptyPage); void load(next); };
-  return <main className="site-shell album-shell"><AlbumHeader archived={event?.status === 'archived'} /><CategoryTabs selected={category} onChange={selectCategory} />{error && <p className="error-message" role="alert">{error}</p>}<AlbumGrid page={page} loading={loading} onLoadMore={() => { if (page.nextCursor) void load(category, page.nextCursor); }} /><nav className="bottom-nav" aria-label="Navigasi utama"><Link href="/moments">Momen saya</Link><Link className="active" href="/album">Album reuni</Link></nav></main>;
+  return <main className="site-shell album-shell"><AlbumHeader archived={event?.status === 'archived'} /><CategoryTabs selected={category} onChange={selectCategory} />{error && <p className="error-message" role="alert">{error}</p>}<AlbumGrid page={page} loading={loading} onLoadMore={() => { if (page.nextCursor) void load(category, page.nextCursor); }} /></main>;
 }
