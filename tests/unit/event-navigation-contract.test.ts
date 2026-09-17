@@ -15,9 +15,9 @@ describe('event branding and navigation contract', () => {
     expect(sponsorBridge).toContain('Support by Lima Circle');
     expect(sponsorBridge).toContain('Rumah Digital Alumni SMAN 5 Bandung');
     expect(sponsorBridge).toContain('Yuk, unduh aplikasinya!');
-    expect(sponsorBridge).toContain('src="/brand/google-play-badge.webp"');
-    expect(styles).toMatch(/\.sponsor-download\s*>\s*img[^}]*display:\s*block/);
-    expect(styles).not.toMatch(/\.sponsor-download\s*>\s*img[^}]*display:\s*none/);
+    expect(sponsorBridge).toContain('className="sponsor-badge"');
+    expect(styles).toMatch(/\.sponsor-badge\s*\{[^}]*background-image:\s*url\(['"]?\/brand\/google-play-badge\.webp['"]?\)/);
+    expect(sponsorBridge).not.toContain('<img src="/brand/google-play-badge.webp"');
   });
 
   it('keeps the sponsor logo, copy, and download badge in a compact non-overflowing row below 620px', () => {
@@ -25,7 +25,7 @@ describe('event branding and navigation contract', () => {
 
     expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-bridge\s*\{[^}]*grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/);
     expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-copy\s*\{[^}]*min-width:\s*0/);
-    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-download\s*>\s*img[^}]*max-width:\s*6rem/);
+    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-badge\s*\{[^}]*width:\s*6rem/);
   });
 
   it('uses one shared event header with the active top navigation on both moments pages', () => {
