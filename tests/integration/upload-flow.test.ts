@@ -106,7 +106,7 @@ describe('direct R2 upload flow', () => {
       complete: async () => published,
     };
 
-    await expect(completeUpload({ momentId, participantId, category: 'REUNI', now }, dependencies)).resolves.toEqual(published);
+    await expect(completeUpload({ momentId, participantId, category: 'REUNI', caption: 'Caption', now }, dependencies)).resolves.toEqual(published);
   });
 
   it('cancels an inactive reservation before reading its object', async () => {
@@ -118,7 +118,7 @@ describe('direct R2 upload flow', () => {
       cancel: async () => { cancelled = true; },
     };
 
-    await expect(completeUpload({ momentId, participantId, category: 'REUNI', now }, dependencies)).rejects.toMatchObject({ code: 'RESERVATION_NOT_ACTIVE', status: 409 });
+    await expect(completeUpload({ momentId, participantId, category: 'REUNI', caption: 'Caption', now }, dependencies)).rejects.toMatchObject({ code: 'RESERVATION_NOT_ACTIVE', status: 409 });
     expect(cancelled).toBe(true);
     expect(read).toBe(false);
   });

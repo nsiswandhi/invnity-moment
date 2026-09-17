@@ -8,6 +8,7 @@ import { HttpError } from '../../errors/http-error';
 export type PublicMomentRow = {
   id: string;
   category: MomentCategory;
+  caption: string;
   likeCount: number;
   createdAt: string;
   publishedAt: string;
@@ -50,7 +51,7 @@ export function createSupabasePublicAlbumDatabase(client: DatabaseClient, presig
       signer.presignGet(displayKey, { expiresInSeconds: 300 }),
       signer.presignGet(thumbnailKey, { expiresInSeconds: 300 }),
     ]);
-    return { id: row.id, category: row.category, likeCount: row.likeCount, liked: row.liked ?? false, createdAt: row.createdAt, publishedAt: row.publishedAt, thumbnailUrl, displayUrl };
+    return { id: row.id, category: row.category, caption: row.caption, likeCount: row.likeCount, liked: row.liked ?? false, createdAt: row.createdAt, publishedAt: row.publishedAt, thumbnailUrl, displayUrl };
   };
 
   return {

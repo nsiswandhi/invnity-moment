@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { deleteOwnedMomentRequest, loadOwnedMoments, mergeOwnedMoments, updateOwnedMomentRequest } from '../../lib/moments/personal-moments';
 import type { MomentRecord } from '../../lib/db/types';
 
-const moment = (id: string, category: MomentRecord['category'] = 'REUNI'): MomentRecord => ({ id, participantId: 'participant-1', eventId: 'event-1', status: 'PUBLISHED', category, r2OriginalKey: 'original', r2DisplayKey: 'display', r2ThumbnailKey: 'thumbnail', mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 10, createdAt: '2026-09-10T00:00:00.000Z', publishedAt: '2026-09-10T00:00:00.000Z', deletedAt: null });
+const moment = (id: string, category: MomentRecord['category'] = 'REUNI'): MomentRecord => ({ id, participantId: 'participant-1', eventId: 'event-1', status: 'PUBLISHED', category, caption: 'Caption', r2OriginalKey: 'original', r2DisplayKey: 'display', r2ThumbnailKey: 'thumbnail', mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 10, createdAt: '2026-09-10T00:00:00.000Z', publishedAt: '2026-09-10T00:00:00.000Z', deletedAt: null });
 
 describe('personal moments client', () => {
   it('loads a requested cursor and retains local items not yet returned by the server', async () => {

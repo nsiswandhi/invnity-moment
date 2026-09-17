@@ -71,7 +71,7 @@ export async function createUploadAuthorization(input: { eventId: string; partic
   }
 }
 
-export async function completeUpload(input: { momentId: string; participantId: string; category: MomentCategory; now?: Date }, dependencies: UploadServiceDependencies = {}): Promise<MomentRecord | UploadMomentContext> {
+export async function completeUpload(input: { momentId: string; participantId: string; category: MomentCategory; caption: string; now?: Date }, dependencies: UploadServiceDependencies = {}): Promise<MomentRecord | UploadMomentContext> {
   const configured = defaultDependencies(dependencies);
   const context = await configured.getMoment!(input.momentId, input.participantId);
   if (!context.participantId || context.participantId !== input.participantId) throw new HttpError(403, 'MOMENT_FORBIDDEN', 'Momen ini bukan milikmu.');
@@ -98,7 +98,7 @@ export async function completeUpload(input: { momentId: string; participantId: s
     const object = await configured.readObject!(objectKey);
     const metadata = await validateUploadedObject(objectKey, { ...r2, headObject: async () => ({ contentType: object.contentType, contentLength: object.contentLength ?? object.body.byteLength, etag: null }), getObject: async () => ({ body: object.body, contentType: object.contentType, contentLength: object.body.byteLength, etag: null }) });
     derivatives = await configured.process!(objectKey, metadata.body, metadata, r2);
-    return await configured.complete!(input.momentId, input.participantId, { category: input.category, r2OriginalKey: objectKey, r2DisplayKey: derivatives.display, r2ThumbnailKey: derivatives.thumbnail, mimeType: metadata.mimeType, byteSize: metadata.byteSize, width: metadata.width, height: metadata.height });
+    return await configured.complete!(input.momentId, input.participantId, { category: input.category, caption: input.caption, r2OriginalKey: objectKey, r2DisplayKey: derivatives.display, r2ThumbnailKey: derivatives.thumbnail, mimeType: metadata.mimeType, byteSize: metadata.byteSize, width: metadata.width, height: metadata.height });
   } catch (error) {
     await configured.cancel!(input.momentId, input.participantId).catch(() => undefined);
     if (derivatives) await Promise.allSettled([r2.deleteObject(derivatives.display), r2.deleteObject(derivatives.thumbnail)]);

@@ -7,7 +7,8 @@ import { clientRateLimitKey, enforceRateLimit } from '../../../../../../lib/auth
 import { MOMENT_CATEGORIES } from '../../../../../../lib/db/types';
 import { completeUpload } from '../../../../../../lib/media/upload-service';
 
-const completeSchema = z.object({ category: z.enum(MOMENT_CATEGORIES) });
+const DEFAULT_MOMENT_CAPTION = 'Momen berharga bersama teman-teman reuni.';
+const completeSchema = z.object({ category: z.enum(MOMENT_CATEGORIES), caption: z.string().max(200).optional() });
 
 export async function POST(request: Request, context: { params: Promise<{ momentId: string }> }) {
   const id = requestId(request);
@@ -17,7 +18,8 @@ export async function POST(request: Request, context: { params: Promise<{ moment
     const participant = await requireParticipant(request);
     const { momentId } = await context.params;
     const input = completeSchema.parse(await request.json());
-    const moment = await completeUpload({ momentId, participantId: participant.id, category: input.category });
+    const caption = input.caption?.trim() || DEFAULT_MOMENT_CAPTION;
+    const moment = await completeUpload({ momentId, participantId: participant.id, category: input.category, caption });
     return NextResponse.json({ data: { moment }, request_id: id });
   } catch (error) {
     return apiError(error, id);
