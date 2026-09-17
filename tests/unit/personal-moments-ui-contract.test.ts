@@ -6,6 +6,7 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 const momentsPage = read('app/(public)/moments/page.tsx');
 const momentsGrid = read('components/moments/MyMomentsGrid.tsx');
+const eventHeader = read('components/brand/EventHeader.tsx');
 const styles = read('app/globals.css');
 
 const DEFAULT_CAPTION = 'Momen berharga bersama teman-teman reuni.';
@@ -30,11 +31,22 @@ describe('personal moments caption UI contract', () => {
   });
 
   it('uses the branded personal header and hero while omitting recovery and bottom navigation', () => {
-    expect(momentsPage).toMatch(/src="\/brand\/invnity-logo\.png"/);
-    expect(momentsPage).toMatch(/href="\/moments"/);
-    expect(momentsPage).toMatch(/href="\/album"/);
+    expect(momentsPage).toContain('<EventHeader activePage="moments" />');
+    expect(eventHeader).toMatch(/src="\/brand\/invnity-logo\.png"/);
+    expect(eventHeader).toMatch(/href="\/moments"/);
+    expect(eventHeader).toMatch(/href="\/album"/);
     expect(momentsPage).not.toContain('Akses kembali');
     expect(momentsPage).not.toContain('bottom-nav');
     expect(styles).toMatch(/\.moments-hero\s*\{[^}]*bgheader\.jpg/);
+  });
+
+  it('forwards the authoritative active-moment quota summary into the camera capture view', () => {
+    expect(momentsPage).toMatch(/<CameraCapture\s+activeMoments=\{activeMoments\}\s+maxActiveMoments=\{quota\}/);
+  });
+
+  it('refreshes the authoritative quota summary after deletion instead of decrementing from the visible page', () => {
+    expect(momentsPage).toMatch(/const refreshQuota = async \(\) => \{[\s\S]*?fetch\('\/api\/v1\/me'\)[\s\S]*?setActiveMoments\(payload\.data\.quota\?\.activeMoments \?\? 0\)[\s\S]*?setQuota\(payload\.data\.quota\?\.maxActiveMoments \?\? 10\)/);
+    expect(momentsPage).toMatch(/await deleteOwnedMomentRequest\([\s\S]*?setPage\([\s\S]*?await refreshQuota\(\)\.catch\(\(\) => undefined\)/);
+    expect(momentsPage).not.toContain('setActiveMoments((count) => Math.max(0, count - 1))');
   });
 });

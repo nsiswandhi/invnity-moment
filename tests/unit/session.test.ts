@@ -20,13 +20,22 @@ function fakeDatabaseClient(response: unknown): DatabaseClient {
 
 describe('participant validation', () => {
   it('normalizes whitespace and email casing before registration', () => {
-    expect(validateParticipantInput({ name: '  Sari   Wijaya ', batch: ' IA 5 ', email: ' SARI@Example.TEST ' }))
-      .toEqual({ name: 'Sari Wijaya', batch: 'IA 5', email: 'sari@example.test' });
+    expect(validateParticipantInput({ name: '  Sari   Wijaya ', batch: ' 1996 ', email: ' SARI@Example.TEST ' }))
+      .toEqual({ name: 'Sari Wijaya', batch: '1996', email: 'sari@example.test' });
   });
 
   it('rejects a registration with a missing batch', () => {
     expect(() => validateParticipantInput({ name: 'Sari', batch: ' ', email: 'sari@example.test' }))
       .toThrow(/batch/i);
+  });
+
+  it.each(['1939', '2051'])('rejects a batch outside the supported year range: %s', (batch) => {
+    expect(() => validateParticipantInput({ name: 'Sari', batch, email: 'sari@example.test' }))
+      .toThrow(/batch/i);
+  });
+
+  it.each(['1940', '2050'])('keeps an in-range batch as a normalized string: %s', (batch) => {
+    expect(validateParticipantInput({ name: 'Sari', batch, email: 'sari@example.test' }).batch).toBe(batch);
   });
 });
 

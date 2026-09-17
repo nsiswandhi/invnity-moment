@@ -34,9 +34,11 @@ describe('branding contract', () => {
 
   it('renders the supplied InVnity logo in the album header', () => {
     const albumHeader = read('components/album/AlbumHeader.tsx');
+    const eventHeader = read('components/brand/EventHeader.tsx');
 
-    expect(albumHeader).toContain('src="/brand/invnity-logo.png"');
-    expect(albumHeader).toContain('alt="InVnity"');
+    expect(albumHeader).toContain('<EventHeader activePage="album" />');
+    expect(eventHeader).toContain('src="/brand/invnity-logo.png"');
+    expect(eventHeader).toContain('alt="InVnity"');
   });
 
   it('keeps the sponsor bridge yellow and responsive', () => {

@@ -40,5 +40,7 @@ describe('registration client configuration', () => {
 
     expect(source).toMatch(/name="batch"[^>]*type="number"/);
     expect(source).toMatch(/name="batch"[^>]*inputMode="numeric"/);
+    expect(source).toMatch(/name="batch"[^>]*min="1940"/);
+    expect(source).toMatch(/name="batch"[^>]*max="2050"/);
   });
 });

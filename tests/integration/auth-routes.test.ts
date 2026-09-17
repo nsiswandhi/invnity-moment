@@ -71,7 +71,7 @@ describe('authentication routes', () => {
   it('rejects a cross-origin cookie mutation before registration work starts', async () => {
     const response = await register(new Request('https://moments.example.test/api/v1/events/reuni/participants', {
       method: 'POST',
-      body: JSON.stringify({ name: 'Sari', batch: 'IA 5', email: 'sari@example.test' }),
+      body: JSON.stringify({ name: 'Sari', batch: '1996', email: 'sari@example.test' }),
       headers: { 'content-type': 'application/json', origin: 'https://attacker.example.test' },
     }), { params: Promise.resolve({ event: 'reuni' }) });
 
@@ -83,7 +83,7 @@ describe('authentication routes', () => {
   it('rejects a cookie-authenticated mutation without its matching CSRF token', async () => {
     const response = await register(new Request('https://moments.example.test/api/v1/events/reuni/participants', {
       method: 'POST',
-      body: JSON.stringify({ name: 'Sari', batch: 'IA 5', email: 'sari@example.test' }),
+      body: JSON.stringify({ name: 'Sari', batch: '1996', email: 'sari@example.test' }),
       headers: { 'content-type': 'application/json', cookie: 'invnity_session=session-token; invnity_csrf=csrf-token' },
     }), { params: Promise.resolve({ event: 'reuni' }) });
 
@@ -97,7 +97,7 @@ describe('authentication routes', () => {
 
     const response = await register(new Request('https://moments.example.test/api/v1/events/reuni/participants', {
       method: 'POST',
-      body: JSON.stringify({ name: 'Sari', batch: 'IA 5', email: 'sari@example.test' }),
+      body: JSON.stringify({ name: 'Sari', batch: '1996', email: 'sari@example.test' }),
       headers: { 'content-type': 'application/json' },
     }), { params: Promise.resolve({ event: 'reuni' }) });
 
@@ -112,7 +112,7 @@ describe('authentication routes', () => {
 
     const response = await register(new Request('https://moments.example.test/api/v1/events/reuni/participants', {
       method: 'POST',
-      body: JSON.stringify({ name: 'Mallory', batch: 'IA 5', email: 'sari@example.test' }),
+      body: JSON.stringify({ name: 'Mallory', batch: '1996', email: 'sari@example.test' }),
       headers: { 'content-type': 'application/json' },
     }), { params: Promise.resolve({ event: 'reuni' }) });
 
@@ -131,7 +131,7 @@ describe('authentication routes', () => {
 
     const response = await register(new Request('https://moments.example.test/api/v1/events/reuni/participants', {
       method: 'POST',
-      body: JSON.stringify({ name: 'Mallory', batch: 'IA 5', email: 'sari@example.test' }),
+      body: JSON.stringify({ name: 'Mallory', batch: '1996', email: 'sari@example.test' }),
       headers: {
         'content-type': 'application/json',
         cookie: 'invnity_session=valid-session; invnity_csrf=csrf-token',
@@ -220,7 +220,7 @@ describe('authentication routes', () => {
 
     const response = await register(new Request('https://moments.example.test/api/v1/events/reuni/participants', {
       method: 'POST',
-      body: JSON.stringify({ name: 'Sari', batch: 'IA 5', email: 'private@example.test' }),
+      body: JSON.stringify({ name: 'Sari', batch: '1996', email: 'private@example.test' }),
       headers: { 'content-type': 'application/json' },
     }), { params: Promise.resolve({ event: 'reuni' }) });
     const body = await response.json();
