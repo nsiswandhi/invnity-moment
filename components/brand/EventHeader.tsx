@@ -15,8 +15,8 @@ export function EventHeader({ activePage }: EventHeaderProps) {
         </div>
       </div>
       <nav className="header-links" aria-label="Navigasi momen">
-        <Link href="/moments" className={activePage === 'moments' ? 'active' : undefined}>Momen saya</Link>
-        <Link href="/album" className={activePage === 'album' ? 'active' : undefined}>Album reuni</Link>
+        <Link href="/moments" className={activePage === 'moments' ? 'active' : undefined} aria-current={activePage === 'moments' ? 'page' : undefined}>Momen saya</Link>
+        <Link href="/album" className={activePage === 'album' ? 'active' : undefined} aria-current={activePage === 'album' ? 'page' : undefined}>Album reuni</Link>
       </nav>
     </header>
   );

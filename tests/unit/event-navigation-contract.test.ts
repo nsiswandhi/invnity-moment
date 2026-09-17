@@ -38,8 +38,19 @@ describe('event branding and navigation contract', () => {
     expect(eventHeader).toContain('10 Oktober 2026');
     expect(eventHeader).toMatch(/href="\/moments"[\s\S]*?className=\{activePage === 'moments' \? 'active' : undefined\}/);
     expect(eventHeader).toMatch(/href="\/album"[\s\S]*?className=\{activePage === 'album' \? 'active' : undefined\}/);
+    expect(eventHeader).toMatch(/href="\/moments"[\s\S]*?aria-current=\{activePage === 'moments' \? 'page' : undefined\}/);
+    expect(eventHeader).toMatch(/href="\/album"[\s\S]*?aria-current=\{activePage === 'album' \? 'page' : undefined\}/);
     expect(momentsPage).toContain('<EventHeader activePage="moments" />');
     expect(albumHeader).toContain('<EventHeader activePage="album" />');
+  });
+
+  it('keeps branding and navigation on separate usable rows below 620px without wrapping the title or date', () => {
+    const styles = read('app/globals.css');
+
+    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.page-header\s*\{[^}]*flex-direction:\s*column/);
+    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.event-header-logo\s*\{[^}]*width:\s*3\.5rem/);
+    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.event-details\s+strong,\s*\.event-details\s+span\s*\{[^}]*white-space:\s*nowrap/);
+    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.header-links\s*\{[^}]*justify-content:\s*space-between[^}]*width:\s*100%/);
   });
 
   it('preserves the dedicated event logo sizing and removes the duplicate album bottom navigation', () => {
