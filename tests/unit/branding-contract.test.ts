@@ -28,8 +28,8 @@ describe('branding contract', () => {
     expect(sponsorBridge).toContain('Lima Circle');
     expect(sponsorBridge).toContain('Rumah Digital Alumni SMAN 5 Bandung');
     expect(sponsorBridge).toContain('Yuk, unduh aplikasinya!');
-    expect(sponsorBridge).toContain('src="/brand/google-play-badge.webp"');
-    expect(sponsorBridge).toContain('alt="Unduh Lima Circle di Google Play"');
+    expect(sponsorBridge).toContain('className="sponsor-badge"');
+    expect(sponsorBridge).toContain("const badgeLabel = 'Unduh Lima Circle di Google Play'");
   });
 
   it('renders the supplied InVnity logo in the album header', () => {
