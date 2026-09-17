@@ -6,6 +6,7 @@ playwright-report/
 test-results/
 sources/
 .superpowers/
+.worktrees/
 AGENTS.md
 task-*-report.md
 *.tsbuildinfo
