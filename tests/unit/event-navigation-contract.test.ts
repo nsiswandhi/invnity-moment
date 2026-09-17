@@ -20,12 +20,15 @@ describe('event branding and navigation contract', () => {
     expect(sponsorBridge).not.toContain('<img src="/brand/google-play-badge.webp"');
   });
 
-  it('keeps the sponsor logo, copy, and download badge in a compact non-overflowing row below 620px', () => {
+  it('stacks and centers the sponsor logo, copy, and download badge below 620px', () => {
     const styles = read('app/globals.css');
 
-    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-bridge\s*\{[^}]*grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/);
-    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-copy\s*\{[^}]*min-width:\s*0/);
-    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-badge\s*\{[^}]*width:\s*6rem/);
+    const mobileStyles = styles.match(/@media\s*\(max-width:\s*619px\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/)?.[1];
+
+    expect(mobileStyles).toMatch(/\.sponsor-bridge\s*\{[^}]*grid-template-columns:\s*1fr[^}]*text-align:\s*center/);
+    expect(mobileStyles).toMatch(/\.sponsor-copy\s*\{[^}]*justify-items:\s*center[^}]*text-align:\s*center/);
+    expect(mobileStyles).toMatch(/\.sponsor-download\s*\{[^}]*justify-items:\s*center/);
+    expect(mobileStyles).toMatch(/\.sponsor-badge\s*\{[^}]*width:\s*6rem/);
   });
 
   it('uses one shared event header with the active top navigation on both moments pages', () => {
