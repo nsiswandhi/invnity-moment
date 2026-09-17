@@ -39,4 +39,8 @@ describe('personal moments caption UI contract', () => {
     expect(momentsPage).not.toContain('bottom-nav');
     expect(styles).toMatch(/\.moments-hero\s*\{[^}]*bgheader\.jpg/);
   });
+
+  it('forwards the authoritative active-moment quota summary into the camera capture view', () => {
+    expect(momentsPage).toMatch(/<CameraCapture\s+activeMoments=\{activeMoments\}\s+maxActiveMoments=\{quota\}/);
+  });
 });
