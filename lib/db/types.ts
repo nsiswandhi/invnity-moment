@@ -48,6 +48,8 @@ export type PublicMoment = {
   id: string;
   category: MomentCategory;
   caption: string;
+  participantName: string;
+  participantBatch: string;
   likeCount: number;
   createdAt: string;
   publishedAt: string;

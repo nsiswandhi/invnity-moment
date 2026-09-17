@@ -5,10 +5,14 @@ import { createR2Client } from '../../media/r2-client';
 import { isManagedMomentObjectKey } from '../../media/object-keys';
 import { HttpError } from '../../errors/http-error';
 
+const DEFAULT_PUBLIC_CAPTION = 'Momen berharga bersama teman-teman reuni.';
+
 export type PublicMomentRow = {
   id: string;
   category: MomentCategory;
-  caption: string;
+  caption: string | null;
+  participantName: string;
+  participantBatch: string;
   likeCount: number;
   createdAt: string;
   publishedAt: string;
@@ -51,7 +55,19 @@ export function createSupabasePublicAlbumDatabase(client: DatabaseClient, presig
       signer.presignGet(displayKey, { expiresInSeconds: 300 }),
       signer.presignGet(thumbnailKey, { expiresInSeconds: 300 }),
     ]);
-    return { id: row.id, category: row.category, caption: row.caption, likeCount: row.likeCount, liked: row.liked ?? false, createdAt: row.createdAt, publishedAt: row.publishedAt, thumbnailUrl, displayUrl };
+    return {
+      id: row.id,
+      category: row.category,
+      caption: row.caption?.trim() || DEFAULT_PUBLIC_CAPTION,
+      participantName: row.participantName,
+      participantBatch: row.participantBatch,
+      likeCount: row.likeCount,
+      liked: row.liked ?? false,
+      createdAt: row.createdAt,
+      publishedAt: row.publishedAt,
+      thumbnailUrl,
+      displayUrl,
+    };
   };
 
   return {
