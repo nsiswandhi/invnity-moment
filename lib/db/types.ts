@@ -4,6 +4,7 @@ export type MomentStatus = 'RESERVED' | 'UPLOADING' | 'PROCESSING' | 'PUBLISHED'
 
 export type MomentObjectMetadata = {
   category: MomentCategory;
+  caption: string;
   r2OriginalKey: string;
   r2DisplayKey: string | null;
   r2ThumbnailKey: string | null;
@@ -20,6 +21,7 @@ export function assertCompleteMomentMetadata(value: unknown): asserts value is M
   const positiveSafeInteger = (candidate: unknown) => typeof candidate === 'number' && Number.isSafeInteger(candidate) && candidate > 0;
   if (
     typeof metadata.category !== 'string' || !MOMENT_CATEGORIES.includes(metadata.category as MomentCategory)
+    || typeof metadata.caption !== 'string' || metadata.caption.length > 200
     || typeof metadata.r2OriginalKey !== 'string' || metadata.r2OriginalKey.trim().length === 0
     || !optionalKeyIsValid('r2DisplayKey') || !optionalKeyIsValid('r2ThumbnailKey')
     || typeof metadata.mimeType !== 'string' || !/^image\/[a-z0-9.+-]+$/i.test(metadata.mimeType)
@@ -30,6 +32,7 @@ export function assertCompleteMomentMetadata(value: unknown): asserts value is M
 }
 
 export type MomentRecord = MomentObjectMetadata & {
+  caption: string;
   id: string;
   participantId: string;
   eventId: string;
@@ -44,6 +47,9 @@ export type CursorPage<T> = { data: T[]; nextCursor: string | null };
 export type PublicMoment = {
   id: string;
   category: MomentCategory;
+  caption: string;
+  participantName: string;
+  participantBatch: string;
   likeCount: number;
   createdAt: string;
   publishedAt: string;

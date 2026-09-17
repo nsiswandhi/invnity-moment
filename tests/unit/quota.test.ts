@@ -14,7 +14,7 @@ type Reservation = { id: string; participantId: string; eventId: string; momentI
 
 function memoryDatabase(activeMoments = 0): MomentDatabase & { moments: StoredMoment[]; reservations: Reservation[] } {
   const moments: StoredMoment[] = Array.from({ length: activeMoments }, (_, index) => ({
-    id: `existing-${index}`, participantId: 'participant-1', eventId: 'event-1', status: 'PUBLISHED', category: 'MOMEN_KITA',
+    id: `existing-${index}`, participantId: 'participant-1', eventId: 'event-1', status: 'PUBLISHED', category: 'MOMEN_KITA', caption: 'Caption',
     r2OriginalKey: `events/event-1/moments/existing-${index}/original.jpg`, r2DisplayKey: `events/event-1/moments/existing-${index}/display.jpg`,
     r2ThumbnailKey: `events/event-1/moments/existing-${index}/thumbnail.jpg`, mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 20,
     createdAt: '2026-09-09T00:00:00.000Z', publishedAt: '2026-09-09T00:00:00.000Z', deletedAt: null,
@@ -35,7 +35,7 @@ function memoryDatabase(activeMoments = 0): MomentDatabase & { moments: StoredMo
       if (used >= 10) throw new Error('QUOTA_EXCEEDED');
       const momentId = `moment-${moments.length}`;
       moments.push({
-        id: momentId, participantId: input.participantId, eventId: input.eventId, status: 'RESERVED', category: 'MOMEN_KITA',
+        id: momentId, participantId: input.participantId, eventId: input.eventId, status: 'RESERVED', category: 'MOMEN_KITA', caption: 'Caption',
         r2OriginalKey: `events/${input.eventId}/moments/${momentId}/original.jpg`, r2DisplayKey: null, r2ThumbnailKey: null,
         mimeType: 'image/jpeg', byteSize: 0, width: 0, height: 0, createdAt: '2026-09-09T00:00:00.000Z', publishedAt: null, deletedAt: null,
       });
@@ -118,7 +118,7 @@ describe('moment quota', () => {
     await expect(reserveMomentSlot('participant-1', 'event-1', 'replacement-after-expiry', '2099-01-01T00:00:00.000Z')).resolves.toMatchObject({ reservationId: 'replacement-after-expiry' });
 
     await expect(completeMoment(expired.momentId, {
-      category: 'REUNI', r2OriginalKey: 'expired-original', r2DisplayKey: 'expired-display', r2ThumbnailKey: 'expired-thumbnail',
+      category: 'REUNI', caption: 'Caption', r2OriginalKey: 'expired-original', r2DisplayKey: 'expired-display', r2ThumbnailKey: 'expired-thumbnail',
       mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 20,
     })).rejects.toThrow('RESERVATION_NOT_ACTIVE');
   });
@@ -129,7 +129,7 @@ describe('moment quota', () => {
     await deleteOwnedMoment('participant-1', reserved.momentId);
     await expect(reserveMomentSlot('participant-1', 'event-1', 'replacement-after-delete', '2099-01-01T00:00:00.000Z')).resolves.toMatchObject({ reservationId: 'replacement-after-delete' });
     await expect(completeMoment(reserved.momentId, {
-      category: 'REUNI', r2OriginalKey: 'deleted-original', r2DisplayKey: 'deleted-display', r2ThumbnailKey: 'deleted-thumbnail',
+      category: 'REUNI', caption: 'Caption', r2OriginalKey: 'deleted-original', r2DisplayKey: 'deleted-display', r2ThumbnailKey: 'deleted-thumbnail',
       mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 20,
     })).rejects.toThrow('RESERVATION_NOT_ACTIVE');
   });
@@ -176,7 +176,7 @@ describe('moment quota', () => {
 
   it('completes idempotently and returns owned moments by cursor', async () => {
     const { momentId } = await reserveMomentSlot('participant-1', 'event-1', 'complete-me', '2099-01-01T00:00:00.000Z');
-    const metadata = { category: 'REUNI' as const, r2OriginalKey: 'original', r2DisplayKey: 'display', r2ThumbnailKey: 'thumbnail', mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 20 };
+    const metadata = { category: 'REUNI' as const, caption: 'Caption', r2OriginalKey: 'original', r2DisplayKey: 'display', r2ThumbnailKey: 'thumbnail', mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 20 };
     await expect(completeMoment(momentId, metadata)).resolves.toMatchObject({ id: momentId, status: 'PUBLISHED' });
     await expect(completeMoment(momentId, metadata)).resolves.toMatchObject({ id: momentId, status: 'PUBLISHED' });
     await expect(listOwnedMoments('participant-1', null, 10)).resolves.toMatchObject({ data: [expect.objectContaining({ id: momentId })] });
@@ -185,12 +185,12 @@ describe('moment quota', () => {
   it('preserves completed metadata when completion is replayed', async () => {
     const { momentId } = await reserveMomentSlot('participant-1', 'event-1', 'preserve-completion', '2099-01-01T00:00:00.000Z');
     await completeMoment(momentId, {
-      category: 'REUNI', r2OriginalKey: 'first-original', r2DisplayKey: 'first-display', r2ThumbnailKey: 'first-thumbnail',
+      category: 'REUNI', caption: 'Caption', r2OriginalKey: 'first-original', r2DisplayKey: 'first-display', r2ThumbnailKey: 'first-thumbnail',
       mimeType: 'image/jpeg', byteSize: 100, width: 10, height: 20,
     });
 
     await expect(completeMoment(momentId, {
-      category: 'FESTIVAL', r2OriginalKey: 'replayed-original', r2DisplayKey: 'replayed-display', r2ThumbnailKey: 'replayed-thumbnail',
+      category: 'FESTIVAL', caption: 'Replayed caption', r2OriginalKey: 'replayed-original', r2DisplayKey: 'replayed-display', r2ThumbnailKey: 'replayed-thumbnail',
       mimeType: 'image/webp', byteSize: 200, width: 30, height: 40,
     })).resolves.toMatchObject({
       category: 'REUNI', r2OriginalKey: 'first-original', r2DisplayKey: 'first-display', r2ThumbnailKey: 'first-thumbnail',
@@ -202,7 +202,7 @@ describe('moment quota', () => {
     const { momentId } = await reserveMomentSlot('participant-1', 'event-1', 'invalid-metadata', '2099-01-01T00:00:00.000Z');
 
     expect(() => completeMoment(momentId, {
-      category: 'REUNI', r2OriginalKey: '', r2DisplayKey: null, r2ThumbnailKey: null,
+      category: 'REUNI', caption: 'Caption', r2OriginalKey: '', r2DisplayKey: null, r2ThumbnailKey: null,
       mimeType: 'not-an-image', byteSize: 0, width: 0, height: 0,
     })).toThrow('INVALID_MOMENT_METADATA');
   });

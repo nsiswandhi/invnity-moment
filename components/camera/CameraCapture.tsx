@@ -48,7 +48,7 @@ export function CameraCapture({ onCapture, onPermissionState, onClose }: CameraC
         {permission === 'denied' && <div className="camera-message"><h2>Kamera belum diizinkan</h2><p>Aktifkan izin kamera di pengaturan browser, lalu coba lagi.</p><button className="secondary-button" type="button" onClick={() => void openCamera()}>Coba lagi</button></div>}
         {permission === 'unavailable' && <div className="camera-message"><h2>Kamera tidak tersedia</h2><p>Buka halaman ini di browser yang mendukung kamera.</p></div>}
       </div>
-      <div className="camera-controls"><button className="secondary-button" type="button" onClick={switchCamera} disabled={permission !== 'granted'}>↺ Ganti kamera</button><button className="shutter-button" type="button" onClick={capture} disabled={permission !== 'granted'} aria-label="Ambil foto"><span aria-hidden="true" /></button><span className="control-spacer" /></div>
+      <div className="camera-controls"><button className="secondary-button camera-switch-button" type="button" onClick={switchCamera} disabled={permission !== 'granted'}>↺ Ganti kamera</button><button className="shutter-button" type="button" onClick={capture} disabled={permission !== 'granted'} aria-label="Ambil foto"><span aria-hidden="true" /></button><span className="control-spacer" /></div>
     </section>
   );
 }

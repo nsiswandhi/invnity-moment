@@ -8,6 +8,9 @@ const participantId = 'e3a7c9f1-30b0-4f8b-9ad4-5adfc8445e5c';
 const row: PublicMomentRow = {
   id: momentId,
   category: 'REUNI',
+  caption: 'Caption',
+  participantName: 'Sari Wijaya',
+  participantBatch: 'IA 5',
   likeCount: 4,
   createdAt: '2026-09-10T00:00:00.000Z',
   publishedAt: '2026-09-10T00:00:00.000Z',
@@ -24,7 +27,7 @@ describe('public album repository', () => {
     const database = createSupabasePublicAlbumDatabase({ rpc } as DatabaseClient, { presignGet });
 
     await expect(database.listPublishedMoments({ eventId, category: null, cursor: null, limit: 30, anonymousUserKey: 'browser-key-12345678901234567890' })).resolves.toEqual({
-      data: [{ id: momentId, category: 'REUNI', likeCount: 4, liked: true, createdAt: row.createdAt, publishedAt: row.publishedAt, thumbnailUrl: expect.stringContaining('thumbnail.jpg'), displayUrl: expect.stringContaining('display.jpg') }],
+      data: [{ id: momentId, category: 'REUNI', caption: 'Caption', participantName: 'Sari Wijaya', participantBatch: 'IA 5', likeCount: 4, liked: true, createdAt: row.createdAt, publishedAt: row.publishedAt, thumbnailUrl: expect.stringContaining('thumbnail.jpg'), displayUrl: expect.stringContaining('display.jpg') }],
       nextCursor: 'opaque-next',
     });
     expect(rpc).toHaveBeenCalledWith('list_published_moments', expect.objectContaining({ p_event_id: eventId, p_category: null, p_cursor: null, p_limit: 30, p_anonymous_user_key_hash: expect.stringMatching(/^[a-f0-9]{64}$/) }));

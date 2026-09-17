@@ -9,7 +9,7 @@ export function Welcome({ eventName = 'Reuni Akbar IA 5 Bandung', eventDate = '1
       <ClientEventTracker eventKey="qr-landing" name="qr_landing" />
       <div className="doodle doodle-star" aria-hidden="true">✦</div>
       <section className="welcome-card" aria-labelledby="welcome-title">
-        <div className="brand-mark" aria-label="InVnity Moments">InV<span>n</span>ity</div>
+        <img className="brand-logo" src="/brand/invnity-logo.png" alt="InVnity" />
         <p className="eyebrow">{eventName} · {eventDate}</p>
         <h1 id="welcome-title">Satu Reuni.<br /><span>Ribuan Cerita.</span></h1>
         <p className="intro-copy">Abadikan momenmu bersama teman-teman IA 5. Foto kamu akan tersimpan di album reuni.</p>
