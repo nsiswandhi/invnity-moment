@@ -29,3 +29,11 @@
 - The linked worktree causes Next.js to warn that it inferred the parent project as the workspace root because both directories contain `package-lock.json`. This warning did not fail build or tests.
 - The initial parallel and serial full Playwright invocations produced intermittent Next development-server `ECONNRESET`/`aborted` logs and the command-output bridge ended before Playwright printed its final summary. There were no failed-test artifacts and no server left listening on port 3000 afterward.
 - To obtain complete evidence, every E2E spec was rerun serially and passed individually: 9 of 9 tests total.
+
+## Follow-up review fix
+
+- Replaced the text-based InVnity mark in `components/album/AlbumHeader.tsx` with the supplied local `/brand/invnity-logo.png` asset and meaningful `alt="InVnity"` text.
+- Added a focused branding contract assertion for the album header. It was first run red against the text mark, then passed after the image change: 4/4 focused branding tests passed.
+- `npm run typecheck` passed after the follow-up.
+- The detail identity remains exactly `Momen by {{Nama}} - {{Angkatan}}`, using a hyphen rather than an em dash.
+- Migration idempotence was reviewed but no migration was changed: migration `0015` is historical schema rollout work and should not be retroactively rewritten; migration `0016` already uses `create or replace` for its public projections. This UI-only correction needs no schema change.

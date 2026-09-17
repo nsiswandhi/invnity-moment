@@ -32,6 +32,13 @@ describe('branding contract', () => {
     expect(sponsorBridge).toContain('alt="Unduh Lima Circle di Google Play"');
   });
 
+  it('renders the supplied InVnity logo in the album header', () => {
+    const albumHeader = read('components/album/AlbumHeader.tsx');
+
+    expect(albumHeader).toContain('src="/brand/invnity-logo.png"');
+    expect(albumHeader).toContain('alt="InVnity"');
+  });
+
   it('keeps the sponsor bridge yellow and responsive', () => {
     const css = read('app/globals.css');
 
