@@ -4,9 +4,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { trackClientEvent } from '../../lib/analytics/client-events';
 
 export type CameraPermissionState = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
-export type CameraCaptureProps = { onCapture: (blob: Blob) => void; onPermissionState: (state: CameraPermissionState) => void; onClose?: () => void };
+export type CameraCaptureProps = { activeMoments?: number; maxActiveMoments?: number; onCapture: (blob: Blob) => void; onPermissionState: (state: CameraPermissionState) => void; onClose?: () => void };
 
-export function CameraCapture({ onCapture, onPermissionState, onClose }: CameraCaptureProps) {
+export function CameraCapture({ activeMoments = 0, maxActiveMoments = 10, onCapture, onPermissionState, onClose }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [permission, setPermission] = useState<CameraPermissionState>('idle');
@@ -40,7 +40,7 @@ export function CameraCapture({ onCapture, onPermissionState, onClose }: CameraC
 
   return (
     <section className="camera-panel" aria-labelledby="camera-title">
-      <div className="camera-topbar"><button className="icon-button" type="button" onClick={onClose} aria-label="Tutup kamera">×</button><span id="camera-title">Ambil momen</span><span className="camera-quota">0 / 10</span></div>
+      <div className="camera-topbar"><button className="icon-button" type="button" onClick={onClose} aria-label="Tutup kamera">×</button><span id="camera-title">Ambil momen</span><span className="camera-quota">{activeMoments} / {maxActiveMoments}</span></div>
       <div className="camera-view">
         <video ref={videoRef} autoPlay muted playsInline aria-label="Pratinjau kamera" />
         {permission === 'idle' && <div className="camera-message"><span className="camera-symbol" aria-hidden="true">◉</span><h2>Siap mengabadikan?</h2><p>Kamera hanya aktif setelah kamu menekan tombol mulai.</p><button className="primary-button" type="button" onClick={() => void openCamera()}>Aktifkan kamera</button></div>}
