@@ -20,6 +20,14 @@ describe('event branding and navigation contract', () => {
     expect(styles).not.toMatch(/\.sponsor-download\s*>\s*img[^}]*display:\s*none/);
   });
 
+  it('keeps the sponsor logo, copy, and download badge in a compact non-overflowing row below 620px', () => {
+    const styles = read('app/globals.css');
+
+    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-bridge\s*\{[^}]*grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/);
+    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-copy\s*\{[^}]*min-width:\s*0/);
+    expect(styles).toMatch(/@media\s*\(max-width:\s*619px\)\s*\{[\s\S]*?\.sponsor-download\s*>\s*img[^}]*max-width:\s*6rem/);
+  });
+
   it('uses one shared event header with the active top navigation on both moments pages', () => {
     const eventHeader = read('components/brand/EventHeader.tsx');
     const momentsPage = read('app/(public)/moments/page.tsx');
