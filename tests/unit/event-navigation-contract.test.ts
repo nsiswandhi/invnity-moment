@@ -26,6 +26,7 @@ describe('event branding and navigation contract', () => {
     const mobileStyles = styles.match(/@media\s*\(max-width:\s*619px\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/)?.[1];
 
     expect(mobileStyles).toMatch(/\.sponsor-bridge\s*\{[^}]*grid-template-columns:\s*1fr[^}]*text-align:\s*center/);
+    expect(mobileStyles).toMatch(/\.sponsor-logo\s*\{[^}]*justify-self:\s*center/);
     expect(mobileStyles).toMatch(/\.sponsor-copy\s*\{[^}]*justify-items:\s*center[^}]*text-align:\s*center/);
     expect(mobileStyles).toMatch(/\.sponsor-download\s*\{[^}]*justify-items:\s*center/);
     expect(mobileStyles).toMatch(/\.sponsor-badge\s*\{[^}]*width:\s*6rem/);
