@@ -22,13 +22,15 @@ describe('moment caption contract', () => {
   it('includes caption in completion metadata and shared moment records', () => {
     expect(uploadService).toMatch(/completeUpload\(input:\s*\{[\s\S]*?caption:\s*string/);
     expect(uploadService).toMatch(/caption:\s*input\.caption/);
-    expect(types).toMatch(/caption:\s*string;/);
+    expect(types).toMatch(/export type MomentObjectMetadata\s*=\s*\{[\s\S]*?caption:\s*string;/);
   });
 
   it('adds, backfills, constrains, and serializes persisted captions', () => {
     expect(migration).toMatch(/add column caption text/i);
     expect(migration).toContain(DEFAULT_CAPTION);
     expect(migration).toMatch(/update moments\s+set caption\s*=\s*'Momen berharga bersama teman-teman reuni\.'\s+where caption is null or btrim\(caption\) = ''/i);
+    expect(migration).toMatch(/alter table moments\s+alter column caption set default 'Momen berharga bersama teman-teman reuni\.'/i);
+    expect(migration).toMatch(/alter table moments\s+alter column caption set not null/i);
     expect(migration).toMatch(/check\s*\(char_length\(caption\)\s*<=\s*200\)/i);
     expect(migration).toMatch(/'caption',\s*(?:m\.)?caption/i);
     expect(migration).toMatch(/list_owned_moments[\s\S]*caption/i);

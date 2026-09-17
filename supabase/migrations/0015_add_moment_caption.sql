@@ -6,6 +6,12 @@ update moments
   where caption is null or btrim(caption) = '';
 
 alter table moments
+  alter column caption set default 'Momen berharga bersama teman-teman reuni.';
+
+alter table moments
+  alter column caption set not null;
+
+alter table moments
   add constraint moments_caption_max_length_check check (char_length(caption) <= 200);
 
 create or replace function moment_record_json(p_moment moments) returns jsonb language sql stable as $$

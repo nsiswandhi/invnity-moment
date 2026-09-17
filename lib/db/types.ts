@@ -4,7 +4,7 @@ export type MomentStatus = 'RESERVED' | 'UPLOADING' | 'PROCESSING' | 'PUBLISHED'
 
 export type MomentObjectMetadata = {
   category: MomentCategory;
-  caption?: string;
+  caption: string;
   r2OriginalKey: string;
   r2DisplayKey: string | null;
   r2ThumbnailKey: string | null;
