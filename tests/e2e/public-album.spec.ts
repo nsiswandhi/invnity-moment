@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const moment = { id: '1ef1d9e5-2d09-4c1e-84dd-9e7c6bb0c219', category: 'REUNI', likeCount: 4, createdAt: '2026-09-10T00:00:00.000Z', publishedAt: '2026-09-10T00:00:00.000Z', thumbnailUrl: 'https://images.test/thumb.jpg', displayUrl: 'https://images.test/display.jpg' };
+const moment = { id: '1ef1d9e5-2d09-4c1e-84dd-9e7c6bb0c219', category: 'REUNI', caption: 'Sahabat lama, cerita baru.', participantName: 'Sari Wijaya', participantBatch: 'IA 5', likeCount: 4, createdAt: '2026-09-10T00:00:00.000Z', publishedAt: '2026-09-10T00:00:00.000Z', thumbnailUrl: 'https://images.test/thumb.jpg', displayUrl: 'https://images.test/display.jpg' };
 
 test('visitor can filter the public album, open a moment, like, and request a signed download', async ({ page }) => {
   let listCalls = 0;
@@ -25,7 +25,9 @@ test('visitor can filter the public album, open a moment, like, and request a si
   await expect.poll(() => listCalls).toBeGreaterThan(1);
   await expect(page.getByRole('link', { name: /Momen Reuni/i })).toHaveAttribute('href', `/album/${moment.id}`);
   await page.goto(`/album/${moment.id}`);
-  await expect(page.getByRole('heading', { name: 'Momen kita.' })).toBeVisible();
+  await expect(page.getByText(moment.caption, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Momen by ${moment.participantName} - ${moment.participantBatch}`, { exact: true })).toBeVisible();
+  await expect(page.getByText('10 September 2026', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /4 suka/i }).click();
   await expect(page.getByRole('button', { name: /5 suka/i })).toBeVisible();
   await page.getByRole('button', { name: /Download foto/i }).click();
