@@ -57,7 +57,7 @@ export default function MomentsPage() {
   const loadMore = async () => { if (!page.nextCursor) return; try { const next = await loadOwnedMoments(fetch, page.nextCursor); setPage(mergeOwnedMoments(next, page.data)); } catch (reason) { setUploadMessage(reason instanceof Error ? reason.message : 'Momen berikutnya belum dapat dimuat.'); } };
 
   if (loading) return <main className="site-shell loading-shell"><p>Menyiapkan momenmu…</p></main>;
-  if (error && !participant) return <main className="site-shell form-shell"><section className="form-card"><p className="eyebrow">Momen saya</p><h1>Masuk dulu, yuk.</h1><p className="intro-copy">{error}</p><Link className="primary-button" href="/register">Daftar / masuk kembali</Link><Link className="text-link" href="/recovery">Pulihkan akses dengan email</Link></section></main>;
+  if (error && !participant) return <main className="site-shell form-shell"><section className="form-card"><p className="eyebrow">Momen saya</p><h1>Masuk dulu, yuk.</h1><p className="intro-copy">{error}</p><Link className="primary-button" href="/recovery">Buat Sesi Baru via Email</Link><Link className="text-link" href="/register">Belum Daftar? Daftar di sini</Link></section></main>;
   if (!participant) return null;
   if (screen === 'camera') return <main className="site-shell camera-shell"><CameraCapture onCapture={onCapture} onPermissionState={() => undefined} onClose={() => setScreen('home')} /></main>;
   if (screen === 'preview' && photo) return <main className="site-shell"><PhotoPreview blob={photo} onRetake={() => setScreen('camera')} onSave={() => setScreen('category')} /></main>;
