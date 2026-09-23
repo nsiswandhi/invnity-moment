@@ -6,10 +6,12 @@ const migration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0001_
 const participantAuthMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0003_participant_auth.sql'), 'utf8');
 const recoveryOutboxMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0004_recovery_outbox_hardening.sql'), 'utf8');
 const publicAlbumMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0007_task6_public_album.sql'), 'utf8');
+let rlsMigration = '';
 let task4FixMigration = '';
 let recoveryOutboxSchemaFixMigration = '';
 try { task4FixMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0005_task4_review_fixes.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
 try { recoveryOutboxSchemaFixMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0013_fix_recovery_outbox_recipient.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
+try { rlsMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0017_enable_rls_on_application_tables.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
 
 describe('initial schema reservation contract', () => {
   it('normalizes participant emails before enforcing event-local uniqueness', () => {
@@ -127,6 +129,31 @@ describe('recovery outbox migration contract', () => {
 describe('recovery outbox schema fix contract', () => {
   it('removes the unused plaintext recipient email column', () => {
     expect(recoveryOutboxSchemaFixMigration).toMatch(/alter table recovery_delivery_outbox\s+drop column if exists recipient_email/i);
+  });
+});
+
+describe('application table RLS contract', () => {
+  it('enables RLS and removes direct client table privileges for every application table', () => {
+    const tables = [
+      'events',
+      'participants',
+      'access_sessions',
+      'moments',
+      'upload_reservations',
+      'likes',
+      'admin_users',
+      'moderation_actions',
+      'analytics_events',
+      'system_health_snapshots',
+      'recovery_tokens',
+      'recovery_delivery_outbox',
+      'rate_limit_buckets',
+    ];
+
+    for (const table of tables) {
+      expect(rlsMigration).toMatch(new RegExp(`alter table public\\.${table} enable row level security`, 'i'));
+      expect(rlsMigration).toMatch(new RegExp(`revoke all on table public\\.${table} from public, anon, authenticated`, 'i'));
+    }
   });
 });
 
