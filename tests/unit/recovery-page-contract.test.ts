@@ -10,4 +10,8 @@ describe('recovery page token flow contract', () => {
     expect(recoveryPage).toMatch(/URLSearchParams[\s\S]*\.get\(['"]token['"]\)/);
     expect(recoveryPage).toMatch(/router\.replace\(['"]\/moments['"]\)/);
   });
+
+  it('sends the CSRF token when requesting recovery while a session cookie exists', () => {
+    expect(recoveryPage).toMatch(/fetch\('\/api\/v1\/access-recovery'[\s\S]*x-csrf-token/);
+  });
 });
