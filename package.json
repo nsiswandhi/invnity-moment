@@ -10,7 +10,7 @@
     "start": "next start",
     "build": "next build",
     "test:unit": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run build && playwright test",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:load": "vitest run --config vitest.config.ts tests/load"

@@ -7,7 +7,7 @@ export default defineConfig({
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
   },
   webServer: {
-    command: 'npm run dev',
+    command: 'npx next start',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
   },
