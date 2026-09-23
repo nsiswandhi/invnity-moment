@@ -7,11 +7,15 @@ const participantAuthMigration = readFileSync(resolve(process.cwd(), 'supabase/m
 const recoveryOutboxMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0004_recovery_outbox_hardening.sql'), 'utf8');
 const publicAlbumMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0007_task6_public_album.sql'), 'utf8');
 let rlsMigration = '';
+let functionSecurityMigration = '';
+let denyPolicyMigration = '';
 let task4FixMigration = '';
 let recoveryOutboxSchemaFixMigration = '';
 try { task4FixMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0005_task4_review_fixes.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
 try { recoveryOutboxSchemaFixMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0013_fix_recovery_outbox_recipient.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
 try { rlsMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0017_enable_rls_on_application_tables.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
+try { functionSecurityMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0018_harden_function_search_paths.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
+try { denyPolicyMigration = readFileSync(resolve(process.cwd(), 'supabase/migrations/0019_add_deny_policies_for_client_roles.sql'), 'utf8'); } catch { /* RED: migration is not shipped yet. */ }
 
 describe('initial schema reservation contract', () => {
   it('normalizes participant emails before enforcing event-local uniqueness', () => {
@@ -153,6 +157,84 @@ describe('application table RLS contract', () => {
     for (const table of tables) {
       expect(rlsMigration).toMatch(new RegExp(`alter table public\\.${table} enable row level security`, 'i'));
       expect(rlsMigration).toMatch(new RegExp(`revoke all on table public\\.${table} from public, anon, authenticated`, 'i'));
+    }
+  });
+});
+
+describe('database function search path contract', () => {
+  it('pins the search path for every application function', () => {
+    const functions = [
+      'normalize_email()',
+      'moment_record_json(public.moments)',
+      'reserve_moment_slot(uuid, uuid, uuid, timestamptz)',
+      'complete_moment(uuid, jsonb)',
+      'delete_owned_moment(uuid, uuid)',
+      'list_owned_moments(uuid, text, integer)',
+      'get_participant_for_event(uuid, uuid)',
+      'seed_local_event(text, text, date)',
+      'create_recovery_token(text, uuid, text, timestamptz, text)',
+      'claim_recovery_delivery_outbox(integer, integer, timestamptz)',
+      'complete_recovery_delivery(uuid, uuid, timestamptz)',
+      'fail_recovery_delivery(uuid, uuid, integer, timestamptz, timestamptz)',
+      'consume_rate_limit_bucket(text, text, integer, integer)',
+      'register_participant_for_event(text, text, text, text, text)',
+      'resume_participant_for_event(text, uuid, text)',
+      'create_access_session(uuid, text, timestamptz)',
+      'get_authenticated_participant_for_session(text)',
+      'revoke_access_session(text)',
+      'consume_recovery_token(text, timestamptz)',
+      'get_participant_quota_summary(uuid)',
+      'update_owned_moment(uuid, uuid, text)',
+      'set_admin_moment_visibility(uuid, uuid, uuid, text, text)',
+      'deny_moderation_audit_mutation()',
+      'list_admin_moments(uuid, text, integer)',
+      'get_moment_for_participant(uuid, uuid)',
+      'get_active_admin_user(uuid)',
+      'get_active_admin_user_by_email(text)',
+      'get_admin_dashboard_summary(uuid)',
+      'list_admin_participants(uuid, text, text, integer)',
+      'set_admin_event_mode(uuid, text)',
+      'admin_database_health_check()',
+      'get_admin_error_rate(uuid)',
+      'block_moment_completion_when_event_write_disabled()',
+      'record_analytics_event(uuid, uuid, text, jsonb)',
+      'get_analytics_funnel_summary(uuid)',
+      'get_sponsor_summary(uuid)',
+      'cleanup_expired_sessions(timestamptz, integer, boolean)',
+      'list_expected_r2_objects(uuid, text, integer)',
+      'decode_public_album_cursor(text)',
+      'list_published_moments(uuid, text, text, integer, text)',
+      'get_published_moment(uuid, uuid, text)',
+      'set_public_moment_like(uuid, uuid, text, boolean)',
+      'get_public_event_state(uuid)',
+    ];
+
+    for (const signature of functions) {
+      expect(functionSecurityMigration).toMatch(new RegExp(`alter function public\\.${signature.replace(/[()]/g, '\\$&').replace(/, /g, ',\\s*')}\\s+set search_path = public, pg_temp`, 'i'));
+    }
+  });
+});
+
+describe('server-only table policy contract', () => {
+  it('adds explicit deny policies for browser roles without granting data access', () => {
+    const tables = [
+      'events',
+      'participants',
+      'access_sessions',
+      'moments',
+      'upload_reservations',
+      'likes',
+      'admin_users',
+      'moderation_actions',
+      'analytics_events',
+      'system_health_snapshots',
+      'recovery_tokens',
+      'recovery_delivery_outbox',
+      'rate_limit_buckets',
+    ];
+
+    for (const table of tables) {
+      expect(denyPolicyMigration).toMatch(new RegExp(`create policy deny_client_access_${table} on public\\.${table} for all to anon, authenticated using \\(false\\) with check \\(false\\)`, 'i'));
     }
   });
 });
