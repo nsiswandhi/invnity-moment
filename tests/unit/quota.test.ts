@@ -12,7 +12,7 @@ import {
 type StoredMoment = MomentRecord;
 type Reservation = { id: string; participantId: string; eventId: string; momentId: string; expiresAt: string; status: 'RESERVED' | 'COMPLETED' | 'CANCELLED' };
 
-function memoryDatabase(activeMoments = 0): MomentDatabase & { moments: StoredMoment[]; reservations: Reservation[] } {
+function memoryDatabase(activeMoments = 0, quotaLimit = 20): MomentDatabase & { moments: StoredMoment[]; reservations: Reservation[] } {
   const moments: StoredMoment[] = Array.from({ length: activeMoments }, (_, index) => ({
     id: `existing-${index}`, participantId: 'participant-1', eventId: 'event-1', status: 'PUBLISHED', category: 'MOMEN_KITA', caption: 'Caption',
     r2OriginalKey: `events/event-1/moments/existing-${index}/original.jpg`, r2DisplayKey: `events/event-1/moments/existing-${index}/display.jpg`,
@@ -32,7 +32,7 @@ function memoryDatabase(activeMoments = 0): MomentDatabase & { moments: StoredMo
       const now = new Date();
       const used = moments.filter((moment) => moment.participantId === input.participantId && moment.deletedAt === null && moment.status !== 'REJECTED' && moment.status !== 'RESERVED').length
         + reservations.filter((reservation) => reservation.participantId === input.participantId && reservation.status === 'RESERVED' && new Date(reservation.expiresAt) > now).length;
-      if (used >= 10) throw new Error('QUOTA_EXCEEDED');
+      if (used >= quotaLimit) throw new Error('QUOTA_EXCEEDED');
       const momentId = `moment-${moments.length}`;
       moments.push({
         id: momentId, participantId: input.participantId, eventId: input.eventId, status: 'RESERVED', category: 'MOMEN_KITA', caption: 'Caption',
@@ -82,23 +82,23 @@ function memoryDatabase(activeMoments = 0): MomentDatabase & { moments: StoredMo
 describe('moment quota', () => {
   beforeEach(() => configureMomentRepository(memoryDatabase()));
 
-  it('reserves the first slot at 0/10', async () => {
+  it('reserves the first slot at 0/20', async () => {
     const result = await reserveMomentSlot('participant-1', 'event-1', 'reservation-1', '2099-01-01T00:00:00.000Z');
     expect(result).toEqual({ momentId: 'moment-0', reservationId: 'reservation-1' });
   });
 
-  it('reserves the tenth slot at 9/10', async () => {
-    configureMomentRepository(memoryDatabase(9));
-    await expect(reserveMomentSlot('participant-1', 'event-1', 'reservation-10', '2099-01-01T00:00:00.000Z')).resolves.toMatchObject({ reservationId: 'reservation-10' });
+  it('reserves the twentieth slot at 19/20', async () => {
+    configureMomentRepository(memoryDatabase(19));
+    await expect(reserveMomentSlot('participant-1', 'event-1', 'reservation-20', '2099-01-01T00:00:00.000Z')).resolves.toMatchObject({ reservationId: 'reservation-20' });
   });
 
-  it('rejects a reservation at 10/10', async () => {
-    configureMomentRepository(memoryDatabase(10));
-    await expect(reserveMomentSlot('participant-1', 'event-1', 'reservation-11', '2099-01-01T00:00:00.000Z')).rejects.toThrow('QUOTA_EXCEEDED');
+  it('rejects a reservation at 20/20', async () => {
+    configureMomentRepository(memoryDatabase(20));
+    await expect(reserveMomentSlot('participant-1', 'event-1', 'reservation-21', '2099-01-01T00:00:00.000Z')).rejects.toThrow('QUOTA_EXCEEDED');
   });
 
-  it('releases a slot after an owned soft delete at 10/10', async () => {
-    const database = memoryDatabase(10);
+  it('releases a slot after an owned soft delete at 20/20', async () => {
+    const database = memoryDatabase(20);
     configureMomentRepository(database);
     await deleteOwnedMoment('participant-1', 'existing-0');
     await expect(reserveMomentSlot('participant-1', 'event-1', 'reservation-reused', '2099-01-01T00:00:00.000Z')).resolves.toMatchObject({ reservationId: 'reservation-reused' });
@@ -106,14 +106,14 @@ describe('moment quota', () => {
   });
 
   it('does not count an expired reservation', async () => {
-    const database = memoryDatabase(9);
+    const database = memoryDatabase(19);
     database.reservations.push({ id: 'expired', participantId: 'participant-1', eventId: 'event-1', momentId: 'orphan', expiresAt: '2000-01-01T00:00:00.000Z', status: 'RESERVED' });
     configureMomentRepository(database);
     await expect(reserveMomentSlot('participant-1', 'event-1', 'reservation-after-expiry', '2099-01-01T00:00:00.000Z')).resolves.toMatchObject({ reservationId: 'reservation-after-expiry' });
   });
 
   it('rejects completion of an expired reservation after its slot is reused', async () => {
-    configureMomentRepository(memoryDatabase(9));
+    configureMomentRepository(memoryDatabase(19));
     const expired = await reserveMomentSlot('participant-1', 'event-1', 'expired-completion', '2000-01-01T00:00:00.000Z');
     await expect(reserveMomentSlot('participant-1', 'event-1', 'replacement-after-expiry', '2099-01-01T00:00:00.000Z')).resolves.toMatchObject({ reservationId: 'replacement-after-expiry' });
 
@@ -124,7 +124,7 @@ describe('moment quota', () => {
   });
 
   it('cancels a deleted reserved slot before allowing its replacement', async () => {
-    configureMomentRepository(memoryDatabase(9));
+    configureMomentRepository(memoryDatabase(19));
     const reserved = await reserveMomentSlot('participant-1', 'event-1', 'delete-reserved', '2099-01-01T00:00:00.000Z');
     await deleteOwnedMoment('participant-1', reserved.momentId);
     await expect(reserveMomentSlot('participant-1', 'event-1', 'replacement-after-delete', '2099-01-01T00:00:00.000Z')).resolves.toMatchObject({ reservationId: 'replacement-after-delete' });
@@ -164,8 +164,8 @@ describe('moment quota', () => {
     });
   });
 
-  it('allows only one of two concurrent reservations at 9/10', async () => {
-    configureMomentRepository(memoryDatabase(9));
+  it('allows only one of two concurrent reservations at 19/20', async () => {
+    configureMomentRepository(memoryDatabase(19));
     const results = await Promise.allSettled([
       reserveMomentSlot('participant-1', 'event-1', 'concurrent-a', '2099-01-01T00:00:00.000Z'),
       reserveMomentSlot('participant-1', 'event-1', 'concurrent-b', '2099-01-01T00:00:00.000Z'),

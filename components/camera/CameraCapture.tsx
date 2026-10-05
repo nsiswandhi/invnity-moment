@@ -6,7 +6,7 @@ import { trackClientEvent } from '../../lib/analytics/client-events';
 export type CameraPermissionState = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
 export type CameraCaptureProps = { activeMoments?: number; maxActiveMoments?: number; onCapture: (blob: Blob) => void; onPermissionState: (state: CameraPermissionState) => void; onClose?: () => void };
 
-export function CameraCapture({ activeMoments = 0, maxActiveMoments = 10, onCapture, onPermissionState, onClose }: CameraCaptureProps) {
+export function CameraCapture({ activeMoments = 0, maxActiveMoments = 20, onCapture, onPermissionState, onClose }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [permission, setPermission] = useState<CameraPermissionState>('idle');
