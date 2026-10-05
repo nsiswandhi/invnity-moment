@@ -4,6 +4,15 @@ import { describe, expect, it } from 'vitest';
 import { CameraCapture, type CameraCaptureProps } from '../../components/camera/CameraCapture';
 
 describe('CameraCapture', () => {
+  it('uses the 20-photo quota when the server value is not available yet', () => {
+    const props = {
+      onCapture: () => undefined,
+      onPermissionState: () => undefined,
+    } as unknown as CameraCaptureProps;
+
+    expect(renderToStaticMarkup(<CameraCapture {...props} />)).toContain('0 / 20');
+  });
+
   it('shows the participant active-moment count alongside their quota', () => {
     const props = {
       activeMoments: 2,

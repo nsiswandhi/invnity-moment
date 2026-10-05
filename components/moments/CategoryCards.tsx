@@ -21,7 +21,7 @@ export type CategoryCardsProps = {
   onSelect: (category: MomentCategory) => void;
 };
 
-export function CategoryCards({ activeCount, selectedCategory, maxActiveMoments = 10, onSelect }: CategoryCardsProps) {
+export function CategoryCards({ activeCount, selectedCategory, maxActiveMoments = 20, onSelect }: CategoryCardsProps) {
   const quotaReached = activeCount >= maxActiveMoments;
   return (
     <fieldset className="category-section" aria-describedby="category-quota">

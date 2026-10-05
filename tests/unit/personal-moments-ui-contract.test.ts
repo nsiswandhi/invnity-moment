@@ -45,7 +45,7 @@ describe('personal moments caption UI contract', () => {
   });
 
   it('refreshes the authoritative quota summary after deletion instead of decrementing from the visible page', () => {
-    expect(momentsPage).toMatch(/const refreshQuota = async \(\) => \{[\s\S]*?fetch\('\/api\/v1\/me'\)[\s\S]*?setActiveMoments\(payload\.data\.quota\?\.activeMoments \?\? 0\)[\s\S]*?setQuota\(payload\.data\.quota\?\.maxActiveMoments \?\? 10\)/);
+    expect(momentsPage).toMatch(/const refreshQuota = async \(\) => \{[\s\S]*?fetch\('\/api\/v1\/me'\)[\s\S]*?setActiveMoments\(payload\.data\.quota\?\.activeMoments \?\? 0\)[\s\S]*?setQuota\(payload\.data\.quota\?\.maxActiveMoments \?\? 20\)/);
     expect(momentsPage).toMatch(/await deleteOwnedMomentRequest\([\s\S]*?setPage\([\s\S]*?await refreshQuota\(\)\.catch\(\(\) => undefined\)/);
     expect(momentsPage).not.toContain('setActiveMoments((count) => Math.max(0, count - 1))');
   });
